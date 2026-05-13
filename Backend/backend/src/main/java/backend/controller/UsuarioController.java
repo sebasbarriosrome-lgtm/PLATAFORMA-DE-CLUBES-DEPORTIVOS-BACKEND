@@ -1,7 +1,9 @@
 package backend.controller;
 
 import backend.entity.Usuario;
+import backend.security.JwtUtil;
 import backend.service.UsuarioService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +41,8 @@ public class UsuarioController {
 
         } catch (Exception e) {
 
+            e.printStackTrace(); // 👈 AQUÍ VA
+
             Map<String, String> error = new HashMap<>();
 
             if (e.getMessage().contains("El correo ya está registrado")) {
@@ -47,12 +51,13 @@ public class UsuarioController {
                 error.put("message", "Error en el registro");
             }
 
-            return ResponseEntity.badRequest().body(error);
-        }
+    return ResponseEntity.badRequest().body(error);
+}
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Usuario usuario) {
+
 
     try {
 
@@ -60,21 +65,23 @@ public class UsuarioController {
                 usuario.getEmail(),
                 usuario.getPassword()
         );
+            // 🔐 GENERAR TOKEN
+            String token = JwtUtil.generarToken(usuarioLogueado);
 
-        Map<String, Object> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("email", usuarioLogueado.getEmail());
+            response.put("rol", usuarioLogueado.getRolGlobal());
 
-        response.put("message", "Login exitoso");
-        response.put("usuario", usuarioLogueado);
+            return ResponseEntity.ok(response);
 
-        return ResponseEntity.ok(response);
+        } catch (Exception e) {
 
-    } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
 
-        Map<String, String> error = new HashMap<>();
+            return ResponseEntity.badRequest().body(error);
+        }
 
-        error.put("message", e.getMessage());
-
-        return ResponseEntity.badRequest().body(error);
     }
-}
 }
