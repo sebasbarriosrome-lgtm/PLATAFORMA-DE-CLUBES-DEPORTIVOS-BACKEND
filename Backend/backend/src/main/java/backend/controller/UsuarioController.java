@@ -1,7 +1,10 @@
 package backend.controller;
 
 import backend.entity.Usuario;
+import backend.security.JwtUtil;
 import backend.service.UsuarioService;
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +42,8 @@ public class UsuarioController {
 
         } catch (Exception e) {
 
+            e.printStackTrace(); // 👈 AQUÍ VA
+
             Map<String, String> error = new HashMap<>();
 
             if (e.getMessage().contains("El correo ya está registrado")) {
@@ -47,12 +52,13 @@ public class UsuarioController {
                 error.put("message", "Error en el registro");
             }
 
-            return ResponseEntity.badRequest().body(error);
-        }
+    return ResponseEntity.badRequest().body(error);
+}
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Usuario usuario) {
+
 
     try {
 
@@ -60,21 +66,50 @@ public class UsuarioController {
                 usuario.getEmail(),
                 usuario.getPassword()
         );
+            // 🔐 GENERAR TOKEN
+            String token = JwtUtil.generarToken(usuarioLogueado);
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("email", usuarioLogueado.getEmail());
+            response.put("rol", usuarioLogueado.getRolGlobal());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(error);
+        }
+
+    }
+
+    @GetMapping("/perfil")
+    public ResponseEntity<?> obtenerPerfil(HttpServletRequest request) {
+
+    try {
+        // 👇 sacamos el email del token (lo puso el JwtFilter)
+        String email = (String) request.getAttribute("email");
+
+        if (email == null) {
+            return ResponseEntity.status(401).body("No autorizado");
+        }
+
+        Usuario usuario = usuarioService.obtenerPorEmail(email);
+
+        // 👇 nunca envíes password
         Map<String, Object> response = new HashMap<>();
-
-        response.put("message", "Login exitoso");
-        response.put("usuario", usuarioLogueado);
+        response.put("name", usuario.getNombre() + " " + usuario.getApellido());
+        response.put("email", usuario.getEmail());
+        response.put("rol", usuario.getRolGlobal());
 
         return ResponseEntity.ok(response);
 
     } catch (Exception e) {
-
-        Map<String, String> error = new HashMap<>();
-
-        error.put("message", e.getMessage());
-
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.status(500).body("Error al obtener perfil");
     }
 }
+
 }
