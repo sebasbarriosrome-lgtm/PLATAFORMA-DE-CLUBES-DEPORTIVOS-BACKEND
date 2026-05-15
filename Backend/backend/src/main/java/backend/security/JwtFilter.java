@@ -27,7 +27,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        // 🔓 si no hay token
+        //  si no hay token
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -47,11 +47,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
             System.out.println("🔐 Usuario autenticado: " + email);
 
-            // ✅ Crear autoridad (Spring necesita ROLE_...)
+            //  Crear autoridad (Spring necesita ROLE_...)
             SimpleGrantedAuthority authority =
                     new SimpleGrantedAuthority("ROLE_" + rol);
 
-            // ✅ Crear autenticación real
+            //  Crear autenticación real
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             email,
@@ -59,10 +59,11 @@ public class JwtFilter extends OncePerRequestFilter {
                             Collections.singletonList(authority)
                     );
 
-            // ✅ REGISTRAR EN SPRING SECURITY (🔥 CLAVE)
+            //  REGISTRAR EN SPRING SECURITY (🔥 CLAVE)
+            SecurityContextHolder.getContext().setAuthentication(null); // limpiar primero
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // ✅ Mantener esto (lo usas en el controller)
+            //  Mantener esto (lo usas en el controller)
             request.setAttribute("email", email);
             request.setAttribute("rol", rol);
             

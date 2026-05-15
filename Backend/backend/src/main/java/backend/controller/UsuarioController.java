@@ -42,7 +42,7 @@ public class UsuarioController {
 
         } catch (Exception e) {
 
-            e.printStackTrace(); // 👈 AQUÍ VA
+            e.printStackTrace(); //  AQUÍ VA
 
             Map<String, String> error = new HashMap<>();
 
@@ -66,7 +66,7 @@ public class UsuarioController {
                 usuario.getEmail(),
                 usuario.getPassword()
         );
-            // 🔐 GENERAR TOKEN
+            //  GENERAR TOKEN
             String token = JwtUtil.generarToken(usuarioLogueado);
 
             Map<String, Object> response = new HashMap<>();
@@ -90,7 +90,7 @@ public class UsuarioController {
     public ResponseEntity<?> obtenerPerfil(HttpServletRequest request) {
 
     try {
-        // 👇 sacamos el email del token (lo puso el JwtFilter)
+        //  sacamos el email del token (lo puso el JwtFilter)
         String email = (String) request.getAttribute("email");
 
         if (email == null) {
@@ -99,7 +99,7 @@ public class UsuarioController {
 
         Usuario usuario = usuarioService.obtenerPorEmail(email);
 
-        // 👇 nunca envíes password
+        
         Map<String, Object> response = new HashMap<>();
         response.put("name", usuario.getNombre() + " " + usuario.getApellido());
         response.put("email", usuario.getEmail());
