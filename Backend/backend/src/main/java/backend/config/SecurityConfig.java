@@ -3,6 +3,7 @@ package backend.config;
 import backend.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -14,7 +15,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
-    // ✅ Bean del filtro JWT (🔥 ESTA ES LA CLAVE)
     @Bean
     public JwtFilter jwtFilter() {
         return new JwtFilter();
@@ -30,8 +30,16 @@ public class SecurityConfig {
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
+                    // ✅ PERMITIR PREFLIGHT (CORS)
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                    // ✅ PUBLICOS
                     .requestMatchers("/usuarios/login", "/usuarios/register").permitAll()
+                    .requestMatchers("/usuarios/perfil").authenticated()
+
+                    // ✅ PROTEGIDOS
                     .requestMatchers("/clubs/**").authenticated()
+
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -44,7 +52,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowCredentials(true);
-        config.addAllowedOriginPattern("*");
+        config.addAllowedOriginPattern("*"); // ✅ mejor para desarrollo
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 

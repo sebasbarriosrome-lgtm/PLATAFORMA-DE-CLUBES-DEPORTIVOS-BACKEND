@@ -51,5 +51,32 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
+    //EDITAR PERFIL
+
+
+    public void actualizarPerfil(
+            String emailActual,
+            String nombre,
+            String apellido,
+            String email,
+            String telefono,
+            String birthDate,
+            String photoUrl
+) {
+
+    usuarioRepository.actualizarPerfil(
+            emailActual,
+            nombre,
+            apellido,
+            email,
+            telefono,
+            birthDate,
+            photoUrl
+    );
+}
+   
+
+
+
 
 }

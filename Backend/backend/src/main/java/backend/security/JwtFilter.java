@@ -6,17 +6,25 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.io.IOException;
 import java.util.Collections;
 
-
-import java.io.IOException;
-
 public class JwtFilter extends OncePerRequestFilter {
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        // ✅ Ignorar rutas públicas
+        return path.equals("/usuarios/login") || path.equals("/usuarios/register");
+    }
 
     @Override
     protected void doFilterInternal(
@@ -26,52 +34,56 @@ public class JwtFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
-
-        //  si no hay token
-        if (header == null || !header.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String token = header.substring(7);
+        System.out.println("========== JWT FILTER ==========");
+        System.out.println("PATH: " + request.getServletPath());
+        System.out.println("HEADER: " + header);
 
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(JwtUtil.getKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+            // ✅ Solo procesar si hay token
+            if (header != null && header.startsWith("Bearer ")) {
 
-            String email = claims.getSubject();
-            String rol = (String) claims.get("rol");
+                String token = header.substring(7);
 
-            System.out.println("🔐 Usuario autenticado: " + email);
+                Claims claims = Jwts.parserBuilder()
+                        .setSigningKey(JwtUtil.getKey())
+                        .build()
+                        .parseClaimsJws(token)
+                        .getBody();
 
-            //  Crear autoridad (Spring necesita ROLE_...)
-            SimpleGrantedAuthority authority =
-                    new SimpleGrantedAuthority("ROLE_" + rol);
+                String email = claims.getSubject();
+                System.out.println("EMAIL TOKEN: " + email);
+                String rol = (String) claims.get("rol");
 
-            //  Crear autenticación real
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            Collections.singletonList(authority)
-                    );
+                System.out.println("✅ AUTH OK: " + email);                
 
-            //  REGISTRAR EN SPRING SECURITY (🔥 CLAVE)
-            SecurityContextHolder.getContext().setAuthentication(null); // limpiar primero
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SimpleGrantedAuthority authority =
+                        new SimpleGrantedAuthority("ROLE_" + rol);
 
-            //  Mantener esto (lo usas en el controller)
-            request.setAttribute("email", email);
-            request.setAttribute("rol", rol);
-            
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                Collections.singletonList(authority)
+                        );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                // ✅ CLAVE: registrar autenticación correctamente
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // ✅ Para usar en el controller
+                request.setAttribute("email", email);
+                request.setAttribute("rol", rol);
+            }
+
         } catch (Exception e) {
+            System.out.println("❌ Token inválido");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Token inválido");
             return;
-}
+        }
 
         filterChain.doFilter(request, response);
     }

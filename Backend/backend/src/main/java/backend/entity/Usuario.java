@@ -2,10 +2,15 @@ package backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.FetchType;
 
 @Entity
 @Table(name = "usuario")
 public class Usuario {
+
+    @OneToOne(mappedBy = "usuario", fetch = FetchType.EAGER)
+    private PerfilUsuario perfilUsuario;    
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -123,5 +128,12 @@ public void setDeletedAt(LocalDateTime deletedAt) {
     this.deletedAt = deletedAt;
 }
 
+public PerfilUsuario getPerfilUsuario() {
+    return perfilUsuario;
+}
+
+public void setPerfilUsuario(PerfilUsuario perfilUsuario) {
+    this.perfilUsuario = perfilUsuario;
+}
 
 }

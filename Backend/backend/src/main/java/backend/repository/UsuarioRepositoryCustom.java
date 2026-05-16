@@ -14,4 +14,16 @@ public interface UsuarioRepositoryCustom {
     );
 
     Optional<Usuario> buscarPorEmail(String email);
+
+
+    void actualizarPerfil(
+        String emailActual,
+        String nombre,
+        String apellido,
+        String email,
+        String telefono,
+        String birthDate,
+        String photoUrl
+);
+
 }
