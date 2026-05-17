@@ -152,40 +152,40 @@ public class UsuarioController {
     public ResponseEntity<?> actualizarPerfil(
             @RequestBody Map<String, String> body,
             HttpServletRequest request
-    ) {
+        ) {
 
-    try {
-        String emailActual = (String) request.getAttribute("email");
+        try {
+            String emailActual = (String) request.getAttribute("email");
 
-        usuarioService.actualizarPerfil(
-        emailActual,
-        body.get("name"),
-        body.get("apellido"),
-        body.get("email"),
-        body.get("telefono"),
-        body.get("birthDate"),
-        body.get("photoUrl")
-);
+            usuarioService.actualizarPerfil(
+            emailActual,
+            body.get("name"),
+            body.get("apellido"),
+            body.get("email"),
+            body.get("telefono"),
+            body.get("birthDate"),
+            body.get("photoUrl")
+        );
 
-        return ResponseEntity.ok("Perfil actualizado");
+            return ResponseEntity.ok("Perfil actualizado");
 
-    } catch (Exception e) {
+        } catch (Exception e) {
 
-        Map<String, String> error = new HashMap<>();
+            Map<String, String> error = new HashMap<>();
 
         
-        if (e.getMessage().contains("correo")) {
-                error.put("message", "El correo ya está registrado");
-        } else if (e.getMessage().contains("teléfono")) {
-                error.put("message", "El teléfono ya está registrado");
-        } else if (e.getMessage().contains("fecha")) {
-                error.put("message", "Fecha de nacimiento inválida");
-        } else {
-                error.put("message", "Error al actualizar perfil");
-        }   
+            if (e.getMessage().contains("correo")) {
+                    error.put("message", "El correo ya está registrado");
+            } else if (e.getMessage().contains("teléfono")) {
+                    error.put("message", "El teléfono ya está registrado");
+            } else if (e.getMessage().contains("fecha")) {
+                    error.put("message", "Fecha de nacimiento inválida");
+            } else {
+                    error.put("message", "Error al actualizar perfil");
+            }   
 
-        return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(error);
+        }
     }
-}
 
 }

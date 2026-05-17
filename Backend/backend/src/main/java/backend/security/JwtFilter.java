@@ -52,7 +52,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 String email = claims.getSubject();
                 System.out.println("EMAIL TOKEN: " + email);
-                String rol = (String) claims.get("rol");
+                String rol = ((String) claims.get("rol")).toUpperCase();
+                System.out.println("AUTH OK: " + rol);
+                System.out.println("ROL NORMALIZADO:|" + rol);
 
                 System.out.println("✅ AUTH OK: " + email);                
 
@@ -65,6 +67,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                 null,
                                 Collections.singletonList(authority)
                         );
+                        System.out.println("AUTHORITIES: " + authentication.getAuthorities());
 
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)

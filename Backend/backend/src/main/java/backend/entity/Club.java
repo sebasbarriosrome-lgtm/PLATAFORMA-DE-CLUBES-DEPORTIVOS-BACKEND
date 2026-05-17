@@ -11,6 +11,9 @@ public class Club {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "deleted_at")
+    private java.sql.Timestamp deletedAt;
+
     private String nombre;
     private String slug;
     private String ciudad;
