@@ -25,8 +25,7 @@ public class ClubController {
     @PostMapping
     public ResponseEntity<?> crearClub(
             @RequestBody Club club,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
 
         try {
 
@@ -37,16 +36,15 @@ public class ClubController {
             }
 
             clubService.crearClub(
-                club.getNombre(),
-                club.getCiudad(),
-                club.getDescripcion(),
-                club.getLogoUrl(),
-                club.getBannerUrl(),
-                club.getColorPrimario(),
-                club.getColorSecundario(),
-                club.getContacto(),
-                email
-            );
+                    club.getNombre(),
+                    club.getCiudad(),
+                    club.getDescripcion(),
+                    club.getLogoUrl(),
+                    club.getBannerUrl(),
+                    club.getColorPrimario(),
+                    club.getColorSecundario(),
+                    club.getContacto(),
+                    email);
 
             return ResponseEntity.ok("Club creado correctamente");
 
@@ -83,7 +81,7 @@ public class ClubController {
 
             if (result == null || result.isEmpty()) {
                 return ResponseEntity.status(403)
-                .body("No tienes acceso al panel del club");
+                        .body("No tienes acceso al panel del club");
             }
 
             return ResponseEntity.ok(result);
@@ -101,8 +99,7 @@ public class ClubController {
     @PutMapping("/personalizacion")
     public ResponseEntity<?> actualizarClub(
             @RequestBody Map<String, String> body,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
 
         try {
 
@@ -114,8 +111,7 @@ public class ClubController {
                     body.get("logoUrl"),
                     body.get("bannerUrl"),
                     body.get("colorPrimario"),
-                    body.get("colorSecundario")
-            );
+                    body.get("colorSecundario"));
 
             return ResponseEntity.ok("Actualizado");
 
@@ -130,13 +126,20 @@ public class ClubController {
         return ResponseEntity.ok(clubService.getClubById(id));
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<?> getClubBySlug(
+            @PathVariable String slug) {
+
+        return ResponseEntity.ok(
+                clubService.getClubBySlug(slug));
+    }
+
     // 1. CREAR SOLICITUD
     // ✅ ✅ ✅ 🔥 CREAR SOLICITUD
     @PostMapping("/solicitud")
     public ResponseEntity<?> crearSolicitud(
             @RequestBody Map<String, Object> body,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
 
         try {
 
@@ -178,8 +181,7 @@ public class ClubController {
                     peso,
                     estatura,
                     experiencia,
-                    especialidad
-            );
+                    especialidad);
 
             return ResponseEntity.ok("Solicitud enviada correctamente");
 
@@ -207,8 +209,7 @@ public class ClubController {
             }
 
             return ResponseEntity.ok(
-                    clubService.getSolicitudesClub(email)
-            );
+                    clubService.getSolicitudesClub(email));
 
         } catch (Exception e) {
 
@@ -222,8 +223,7 @@ public class ClubController {
     public ResponseEntity<?> resolverSolicitud(
             @PathVariable Long id,
             @RequestBody Map<String, String> body,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request) {
         try {
 
             // ✅ 1. obtener email del JWT
@@ -237,7 +237,7 @@ public class ClubController {
             String accion = body.get("accion");
 
             if (accion == null ||
-                (!accion.equals("aceptado") && !accion.equals("rechazado"))) {
+                    (!accion.equals("aceptado") && !accion.equals("rechazado"))) {
                 return ResponseEntity.badRequest().body("Acción inválida");
             }
 
@@ -257,5 +257,3 @@ public class ClubController {
     }
 
 }
-
-
