@@ -158,20 +158,18 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
         @Override
         public void crearSolicitudDeportiva(
                         Long solicitudId,
-                        Integer edad,
                         Double peso,
                         Long estatura,
                         String experiencia,
                         String especialidad) {
 
                 entityManager
-                                .createNativeQuery("CALL sp_create_solicitud_deportiva(?,?,?,?,?,?)")
+                                .createNativeQuery("CALL sp_create_solicitud_deportiva(?,?,?,?,?)")
                                 .setParameter(1, solicitudId)
-                                .setParameter(2, edad)
-                                .setParameter(3, peso)
-                                .setParameter(4, estatura)
-                                .setParameter(5, experiencia)
-                                .setParameter(6, especialidad)
+                                .setParameter(2, peso)
+                                .setParameter(3, estatura)
+                                .setParameter(4, experiencia)
+                                .setParameter(5, especialidad)
                                 .executeUpdate();
         }
 

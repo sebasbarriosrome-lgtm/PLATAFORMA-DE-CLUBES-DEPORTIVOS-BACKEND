@@ -150,11 +150,6 @@ public class ClubController {
                 return ResponseEntity.status(401).body("No autorizado");
             }
 
-            // ✅ Parseo seguro de datos (MUY IMPORTANTE 🔥)
-            Integer edad = body.get("edad") != null
-                    ? Integer.valueOf(body.get("edad").toString())
-                    : null;
-
             Double peso = body.get("peso") != null
                     ? Double.valueOf(body.get("peso").toString())
                     : null;
@@ -177,7 +172,6 @@ public class ClubController {
                     Long.valueOf(body.get("clubId").toString()),
                     body.get("rol").toString(),
                     body.get("mensaje").toString(),
-                    edad,
                     peso,
                     estatura,
                     experiencia,
@@ -253,6 +247,28 @@ public class ClubController {
             error.put("message", e.getMessage());
 
             return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @GetMapping("/solicitudes/rol")
+    public ResponseEntity<?> getSolicitudesPorRol(
+            @RequestParam String rol,
+            HttpServletRequest request) {
+
+        try {
+
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            return ResponseEntity.ok(
+                    clubService.getSolicitudesPorRol(email, rol));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error filtrando solicitudes");
         }
     }
 

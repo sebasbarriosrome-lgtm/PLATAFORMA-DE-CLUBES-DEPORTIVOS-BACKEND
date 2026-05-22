@@ -3,7 +3,6 @@ package backend.entity;
 import jakarta.persistence.*;
 import java.sql.Timestamp;
 
-
 @Entity
 @Table(name = "solicitud_deportiva")
 public class SolicitudDeportiva {
@@ -14,8 +13,6 @@ public class SolicitudDeportiva {
 
     @Column(name = "solicitud_id")
     private Long solicitudId;
-
-    private Integer edad;
 
     private Double peso;
 
@@ -31,7 +28,6 @@ public class SolicitudDeportiva {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    
     // getters y setters
     public Long getId() {
         return id;
@@ -47,14 +43,6 @@ public class SolicitudDeportiva {
 
     public void setSolicitudId(Long solicitudId) {
         this.solicitudId = solicitudId;
-    }
-
-    public Integer getEdad() {
-        return edad;
-    }
-
-    public void setEdad(Integer edad) {
-        this.edad = edad;
     }
 
     public Double getPeso() {
@@ -102,7 +90,7 @@ public class SolicitudDeportiva {
     }
 
     public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt; 
+        this.updatedAt = updatedAt;
     }
-    
+
 }
