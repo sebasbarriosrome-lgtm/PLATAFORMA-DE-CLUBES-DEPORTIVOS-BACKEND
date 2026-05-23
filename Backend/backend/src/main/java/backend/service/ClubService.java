@@ -245,15 +245,21 @@ public class ClubService {
         Long clubId = ((Number) solicitud[1]).longValue();
         String rol = (String) solicitud[2];
 
-        // ✅ si rechaza
+        // ✅ si rechaza - ELIMINAR solicitudes
         if ("rechazado".equals(accion)) {
-            clubRepository.actualizarEstadoSolicitud(solicitudId, "rechazado");
+            entityManager.createNativeQuery(
+                    "DELETE FROM solicitud_deportiva WHERE solicitud_id = ?")
+                    .setParameter(1, solicitudId)
+                    .executeUpdate();
+
+            entityManager.createNativeQuery(
+                    "DELETE FROM solicitud WHERE id = ?")
+                    .setParameter(1, solicitudId)
+                    .executeUpdate();
             return;
         }
 
         // ✅ aceptar
-        clubRepository.actualizarEstadoSolicitud(solicitudId, "aceptado");
-
         clubRepository.crearUsuarioClub(usuarioId, clubId, rol);
 
         if ("deportista".equals(rol)) {
@@ -290,6 +296,17 @@ public class ClubService {
                     .setParameter(4, solicitudId)
                     .executeUpdate();
         }
+
+        // ✅ ELIMINAR solicitudes después de aceptar
+        entityManager.createNativeQuery(
+                "DELETE FROM solicitud_deportiva WHERE solicitud_id = ?")
+                .setParameter(1, solicitudId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery(
+                "DELETE FROM solicitud WHERE id = ?")
+                .setParameter(1, solicitudId)
+                .executeUpdate();
     }
 
     public Club getClubById(Long id) {
