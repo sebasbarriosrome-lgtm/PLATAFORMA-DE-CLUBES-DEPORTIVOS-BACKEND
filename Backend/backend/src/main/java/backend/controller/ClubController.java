@@ -272,4 +272,129 @@ public class ClubController {
         }
     }
 
+    @GetMapping("/horarios")
+    public ResponseEntity<?> getHorariosClub(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            return ResponseEntity.ok(clubService.getHorariosClub(email));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error obteniendo horarios");
+        }
+    }
+
+    @GetMapping("/horarios/slug/{slug}")
+    public ResponseEntity<?> getHorariosBySlug(@PathVariable String slug) {
+        try {
+            return ResponseEntity.ok(clubService.getHorariosClubBySlug(slug));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error obteniendo horarios");
+        }
+    }
+
+    @PostMapping("/horarios")
+    public ResponseEntity<?> crearHorario(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            String dia = body.get("dia");
+            String horaInicio = body.get("horaInicio");
+            String horaFin = body.get("horaFin");
+            String ubicacion = body.get("ubicacion");
+            String descripcion = body.get("descripcion");
+
+            if (dia == null || horaInicio == null || horaFin == null || ubicacion == null) {
+                return ResponseEntity.badRequest().body("Datos de horario incompletos");
+            }
+
+            Long horarioId = clubService.crearHorario(
+                    email,
+                    dia,
+                    horaInicio,
+                    horaFin,
+                    descripcion,
+                    ubicacion);
+
+            return ResponseEntity.ok(Map.of("id", horarioId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @PutMapping("/horarios/{id}")
+    public ResponseEntity<?> actualizarHorario(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            String dia = body.get("dia");
+            String horaInicio = body.get("horaInicio");
+            String horaFin = body.get("horaFin");
+            String ubicacion = body.get("ubicacion");
+            String descripcion = body.get("descripcion");
+
+            if (dia == null || horaInicio == null || horaFin == null || ubicacion == null) {
+                return ResponseEntity.badRequest().body("Datos de horario incompletos");
+            }
+
+            clubService.actualizarHorario(
+                    id,
+                    email,
+                    dia,
+                    horaInicio,
+                    horaFin,
+                    descripcion,
+                    ubicacion);
+
+            return ResponseEntity.ok("Horario actualizado");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @DeleteMapping("/horarios/{id}")
+    public ResponseEntity<?> eliminarHorario(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            clubService.eliminarHorario(id, email);
+            return ResponseEntity.ok("Horario eliminado");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
 }

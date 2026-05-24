@@ -193,4 +193,75 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                 .executeUpdate();
         }
 
+        @Override
+        public Long crearHorarioEntrenamiento(
+                        Long clubId,
+                        String dia,
+                        String horaInicio,
+                        String horaFin,
+                        String descripcion,
+                        String ubicacion) {
+
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_horario_entrenamiento(?,?,?,?,?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, dia)
+                                .setParameter(3, horaInicio)
+                                .setParameter(4, horaFin)
+                                .setParameter(5, descripcion)
+                                .setParameter(6, ubicacion)
+                                .getSingleResult();
+
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarHorarioEntrenamiento(
+                        Long horarioId,
+                        String dia,
+                        String horaInicio,
+                        String horaFin,
+                        String descripcion,
+                        String ubicacion) {
+
+                entityManager
+                                .createNativeQuery("CALL sp_update_horario_entrenamiento(?,?,?,?,?,?)")
+                                .setParameter(1, horarioId)
+                                .setParameter(2, dia)
+                                .setParameter(3, horaInicio)
+                                .setParameter(4, horaFin)
+                                .setParameter(5, descripcion)
+                                .setParameter(6, ubicacion)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void eliminarHorarioEntrenamiento(Long horarioId) {
+
+                entityManager
+                                .createNativeQuery("CALL sp_delete_horario_entrenamiento(?)")
+                                .setParameter(1, horarioId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getHorariosByClubSlug(String slug) {
+
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_horarios_by_club_slug(?)")
+                                .setParameter(1, slug)
+                                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getHorariosByClubId(Long clubId) {
+
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_horarios_by_club_id(?)")
+                                .setParameter(1, clubId)
+                                .getResultList();
+        }
+
 }

@@ -309,11 +309,6 @@ public class ClubService {
                 .executeUpdate();
     }
 
-    public Club getClubById(Long id) {
-        return clubRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Club no encontrado"));
-    }
-
     public List<Map<String, Object>> getSolicitudesPorRol(String email, String rol) {
 
         var usuario = usuarioRepository.buscarPorEmail(email)
@@ -359,4 +354,126 @@ public class ClubService {
         return response;
     }
 
+    public List<Map<String, Object>> getHorariosClub(String email) {
+
+        Long clubId = obtenerClubIdDelAdmin(email);
+        List<Object[]> results = clubRepository.getHorariosByClubId(clubId);
+
+        return mapHorarios(results);
+    }
+
+    public List<Map<String, Object>> getHorariosClubBySlug(String slug) {
+
+        List<Object[]> results = clubRepository.getHorariosByClubSlug(slug);
+        return mapHorarios(results);
+    }
+
+    @Transactional
+    public Long crearHorario(
+            String email,
+            String dia,
+            String horaInicio,
+            String horaFin,
+            String descripcion,
+            String ubicacion) {
+
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        return clubRepository.crearHorarioEntrenamiento(
+                clubId,
+                dia,
+                horaInicio,
+                horaFin,
+                descripcion,
+                ubicacion);
+    }
+
+    @Transactional
+    public void actualizarHorario(
+            Long horarioId,
+            String email,
+            String dia,
+            String horaInicio,
+            String horaFin,
+            String descripcion,
+            String ubicacion) {
+
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        Long count = ((Number) entityManager
+                .createNativeQuery(
+                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                .setParameter(1, horarioId)
+                .setParameter(2, clubId)
+                .getSingleResult()).longValue();
+
+        if (count == 0) {
+            throw new RuntimeException("Horario no encontrado o no pertenece al club");
+        }
+
+        clubRepository.actualizarHorarioEntrenamiento(
+                horarioId,
+                dia,
+                horaInicio,
+                horaFin,
+                descripcion,
+                ubicacion);
+    }
+
+    @Transactional
+    public void eliminarHorario(Long horarioId, String email) {
+
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        Long count = ((Number) entityManager
+                .createNativeQuery(
+                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                .setParameter(1, horarioId)
+                .setParameter(2, clubId)
+                .getSingleResult()).longValue();
+
+        if (count == 0) {
+            throw new RuntimeException("Horario no encontrado o no pertenece al club");
+        }
+
+        clubRepository.eliminarHorarioEntrenamiento(horarioId);
+    }
+
+    private Long obtenerClubIdDelAdmin(String email) {
+
+        var usuario = usuarioRepository.buscarPorEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Map<String, Object> panel = (Map<String, Object>) clubRepository.getPanelClubData(usuario.getId());
+
+        if (panel == null) {
+            throw new RuntimeException("No tiene club");
+        }
+
+        return ((Number) panel.get("id")).longValue();
+    }
+
+    private List<Map<String, Object>> mapHorarios(List<Object[]> results) {
+
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", row[0]);
+            item.put("dia", row[1]);
+            item.put("horaInicio", row[2]);
+            item.put("horaFin", row[3]);
+            item.put("descripcion", row[4]);
+            item.put("ubicacion", row[5]);
+            item.put("estado", row[6]);
+            response.add(item);
+        }
+
+        return response;
+    }
+
+    public Club getClubById(Long id) {
+        return clubRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Club no encontrado"));
+    }
 }
