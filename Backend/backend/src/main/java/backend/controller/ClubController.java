@@ -184,7 +184,7 @@ public class ClubController {
             e.printStackTrace(); // ✅ DEBUG CLAVE
 
             Map<String, String> error = new HashMap<>();
-            error.put("message", "Error al crear solicitud");
+            error.put("message", e.getMessage() != null ? e.getMessage() : "Error al crear solicitud");
 
             return ResponseEntity.badRequest().body(error);
         }

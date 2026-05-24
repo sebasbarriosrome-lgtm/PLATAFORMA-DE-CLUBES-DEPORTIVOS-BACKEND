@@ -224,12 +224,14 @@ public class ClubService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // ✅ 🔒 VALIDAR QUE ES ADMIN DEL CLUB
-        boolean esAdmin = entityManager.createNativeQuery("""
+        Number adminCount = (Number) entityManager.createNativeQuery("""
                     SELECT COUNT(*) FROM usuario_club
                     WHERE usuario_id = ? AND rol = 'admin'
                 """)
                 .setParameter(1, usuario.getId())
-                .getSingleResult() != null;
+                .getSingleResult();
+
+        boolean esAdmin = adminCount != null && adminCount.longValue() > 0;
 
         if (!esAdmin) {
             throw new RuntimeException("No tienes permisos para aceptar solicitudes");
