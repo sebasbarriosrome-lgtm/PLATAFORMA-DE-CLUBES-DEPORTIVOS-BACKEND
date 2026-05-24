@@ -450,6 +450,7 @@ public class ClubService {
             throw new RuntimeException("No tiene club");
         }
 
+        // El repositorio devuelve el mapa con la clave 'id'
         return ((Number) panel.get("id")).longValue();
     }
 

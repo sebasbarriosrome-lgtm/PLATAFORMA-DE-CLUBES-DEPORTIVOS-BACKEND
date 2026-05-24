@@ -259,7 +259,7 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
         public List<Object[]> getHorariosByClubId(Long clubId) {
 
                 return (List<Object[]>) entityManager
-                                .createNativeQuery("CALL sp_get_horarios_by_club_id(?)")
+                                .createNativeQuery("CALL sp_get_horarios_by_club(?)")
                                 .setParameter(1, clubId)
                                 .getResultList();
         }
