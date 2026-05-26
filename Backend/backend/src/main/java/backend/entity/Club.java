@@ -21,7 +21,10 @@ public class Club {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @Column(columnDefinition = "TEXT")
     private String logoUrl;
+
+    @Column(columnDefinition = "TEXT")
     private String bannerUrl;
 
     private String colorPrimario;
@@ -31,9 +34,11 @@ public class Club {
 
     private String estado = "activo";
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    public Club() {}
+    public Club() {
+    }
 
     public Club(String nombre, String ciudad) {
         this.nombre = nombre;
@@ -43,103 +48,102 @@ public class Club {
 
     // Getters
 
-public Long getId() {
-    return id;
-}
+    public Long getId() {
+        return id;
+    }
 
-public String getNombre() {
-    return nombre;
-}
+    public String getNombre() {
+        return nombre;
+    }
 
-public String getSlug() {
-    return slug;
-}
+    public String getSlug() {
+        return slug;
+    }
 
-public String getCiudad() {
-    return ciudad;
-}
+    public String getCiudad() {
+        return ciudad;
+    }
 
-public String getDescripcion() {
-    return descripcion;
-}
+    public String getDescripcion() {
+        return descripcion;
+    }
 
-public String getLogoUrl() {
-    return logoUrl;
-}
+    public String getLogoUrl() {
+        return logoUrl;
+    }
 
-public String getBannerUrl() {
-    return bannerUrl;
-}
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
 
-public String getColorPrimario() {
-    return colorPrimario;
-}
+    public String getColorPrimario() {
+        return colorPrimario;
+    }
 
-public String getColorSecundario() {
-    return colorSecundario;
-}
+    public String getColorSecundario() {
+        return colorSecundario;
+    }
 
-public String getContacto() {
-    return contacto;
-}
+    public String getContacto() {
+        return contacto;
+    }
 
-public String getEstado() {
-    return estado;
-}
+    public String getEstado() {
+        return estado;
+    }
 
-public LocalDateTime getCreatedAt() {
-    return createdAt;
-}
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
+    // Setters
 
-// Setters
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-public void setId(Long id) {
-    this.id = id;
-}
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-public void setNombre(String nombre) {
-    this.nombre = nombre;
-}
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
 
-public void setSlug(String slug) {
-    this.slug = slug;
-}
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
 
-public void setCiudad(String ciudad) {
-    this.ciudad = ciudad;
-}
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
 
-public void setDescripcion(String descripcion) {
-    this.descripcion = descripcion;
-}
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
 
-public void setLogoUrl(String logoUrl) {
-    this.logoUrl = logoUrl;
-}
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
+    }
 
-public void setBannerUrl(String bannerUrl) {
-    this.bannerUrl = bannerUrl;
-}
+    public void setColorPrimario(String colorPrimario) {
+        this.colorPrimario = colorPrimario;
+    }
 
-public void setColorPrimario(String colorPrimario) {
-    this.colorPrimario = colorPrimario;
-}
+    public void setColorSecundario(String colorSecundario) {
+        this.colorSecundario = colorSecundario;
+    }
 
-public void setColorSecundario(String colorSecundario) {
-    this.colorSecundario = colorSecundario;
-}
+    public void setContacto(String contacto) {
+        this.contacto = contacto;
+    }
 
-public void setContacto(String contacto) {
-    this.contacto = contacto;
-}
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
 
-public void setEstado(String estado) {
-    this.estado = estado;
-}
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
-public void setCreatedAt(LocalDateTime createdAt) {
-    this.createdAt = createdAt;
-}
-    
 }

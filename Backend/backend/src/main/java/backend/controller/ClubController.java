@@ -116,7 +116,9 @@ public class ClubController {
             return ResponseEntity.ok("Actualizado");
 
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error");
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage() != null ? e.getMessage() : "Error al actualizar club");
+            return ResponseEntity.badRequest().body(error);
         }
     }
 
@@ -269,6 +271,76 @@ public class ClubController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Error filtrando solicitudes");
+        }
+    }
+
+    @GetMapping("/entrenadores")
+    public ResponseEntity<?> getEntrenadoresClub(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            return ResponseEntity.ok(clubService.getEntrenadoresClub(email));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/deportistas")
+    public ResponseEntity<?> getDeportistasClub(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            return ResponseEntity.ok(clubService.getDeportistasClub(email));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/entrenadores/{id}")
+    public ResponseEntity<?> eliminarEntrenador(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            clubService.eliminarEntrenador(id, email);
+            return ResponseEntity.ok(Map.of("message", "Entrenador eliminado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/deportistas/{id}")
+    public ResponseEntity<?> eliminarDeportista(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            clubService.eliminarDeportista(id, email);
+            return ResponseEntity.ok(Map.of("message", "Deportista eliminado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 

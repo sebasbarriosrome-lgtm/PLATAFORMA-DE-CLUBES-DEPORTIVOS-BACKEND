@@ -121,9 +121,13 @@ public class ClubService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // ✅ obtener club del usuario
-        Object[] result = (Object[]) clubRepository.getPanelClubData(usuario.getId());
+        Map<String, Object> panel = (Map<String, Object>) clubRepository.getPanelClubData(usuario.getId());
 
-        Long clubId = ((Number) result[0]).longValue();
+        if (panel == null || panel.get("id") == null) {
+            throw new RuntimeException("Club no encontrado para el usuario");
+        }
+
+        Long clubId = ((Number) panel.get("id")).longValue();
 
         // ✅ actualizar
         clubRepository.actualizarClub(
@@ -354,6 +358,138 @@ public class ClubService {
         }
 
         return response;
+    }
+
+    public List<Map<String, Object>> getEntrenadoresClub(String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager
+                .createNativeQuery(
+                        """
+                                SELECT e.id, u.id, u.nombre, u.apellido, u.email, uc.id, e.experiencia, e.especialidad, uc.estado, e.created_at
+                                FROM entrenador e
+                                JOIN usuario_club uc ON uc.id = e.usuario_club_id
+                                JOIN usuario u ON u.id = uc.usuario_id
+                                WHERE uc.club_id = ? AND uc.rol = 'entrenador' AND e.deleted_at IS NULL
+                                """)
+                .setParameter(1, clubId)
+                .getResultList();
+
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("entrenadorId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("usuarioClubId", ((Number) row[5]).longValue());
+            item.put("experiencia", row[6]);
+            item.put("especialidad", row[7]);
+            item.put("estado", row[8]);
+            item.put("createdAt", row[9]);
+            response.add(item);
+        }
+
+        return response;
+    }
+
+    @Transactional
+    public void eliminarEntrenador(Long entrenadorId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        Object[] result = (Object[]) entityManager.createNativeQuery("""
+                SELECT e.usuario_club_id, uc.club_id
+                FROM entrenador e
+                JOIN usuario_club uc ON uc.id = e.usuario_club_id
+                WHERE e.id = ? AND e.deleted_at IS NULL
+                """)
+                .setParameter(1, entrenadorId)
+                .getSingleResult();
+
+        Long usuarioClubId = ((Number) result[0]).longValue();
+        Long entrenadorClubId = ((Number) result[1]).longValue();
+
+        if (!clubId.equals(entrenadorClubId)) {
+            throw new RuntimeException("El entrenador no pertenece a tu club");
+        }
+
+        entityManager.createNativeQuery("DELETE FROM entrenador WHERE id = ?")
+                .setParameter(1, entrenadorId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM usuario_club WHERE id = ?")
+                .setParameter(1, usuarioClubId)
+                .executeUpdate();
+    }
+
+    public List<Map<String, Object>> getDeportistasClub(String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager
+                .createNativeQuery(
+                        """
+                                SELECT d.id, u.id, u.nombre, u.apellido, u.email, uc.id, d.peso, d.estatura, d.categoria_id, d.grupo_id, uc.estado, d.created_at
+                                FROM deportista d
+                                JOIN usuario_club uc ON uc.id = d.usuario_club_id
+                                JOIN usuario u ON u.id = uc.usuario_id
+                                WHERE uc.club_id = ? AND uc.rol = 'deportista' AND d.deleted_at IS NULL
+                                """)
+                .setParameter(1, clubId)
+                .getResultList();
+
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("deportistaId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("usuarioClubId", ((Number) row[5]).longValue());
+            item.put("peso", row[6]);
+            item.put("estatura", row[7]);
+            item.put("categoriaId", row[8]);
+            item.put("grupoId", row[9]);
+            item.put("estado", row[10]);
+            item.put("createdAt", row[11]);
+            response.add(item);
+        }
+
+        return response;
+    }
+
+    @Transactional
+    public void eliminarDeportista(Long deportistaId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        Object[] result = (Object[]) entityManager.createNativeQuery("""
+                SELECT d.usuario_club_id, uc.club_id
+                FROM deportista d
+                JOIN usuario_club uc ON uc.id = d.usuario_club_id
+                WHERE d.id = ? AND d.deleted_at IS NULL
+                """)
+                .setParameter(1, deportistaId)
+                .getSingleResult();
+
+        Long usuarioClubId = ((Number) result[0]).longValue();
+        Long deportistaClubId = ((Number) result[1]).longValue();
+
+        if (!clubId.equals(deportistaClubId)) {
+            throw new RuntimeException("El deportista no pertenece a tu club");
+        }
+
+        entityManager.createNativeQuery("DELETE FROM deportista WHERE id = ?")
+                .setParameter(1, deportistaId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM usuario_club WHERE id = ?")
+                .setParameter(1, usuarioClubId)
+                .executeUpdate();
     }
 
     public List<Map<String, Object>> getHorariosClub(String email) {

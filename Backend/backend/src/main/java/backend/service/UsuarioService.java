@@ -1,27 +1,35 @@
 package backend.service;
 
 import backend.entity.Usuario;
+import backend.entity.UsuarioClub;
 import backend.repository.UsuarioRepository;
+import backend.repository.UsuarioClubRepository;
+import backend.dto.RolValidacionDTO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioClubRepository usuarioClubRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder) {
+            UsuarioClubRepository usuarioClubRepository,
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.usuarioClubRepository = usuarioClubRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     // REGISTER
     public void registrarUsuario(String nombre,
-                                 String apellido,
-                                 String email,
-                                 String password) {
+            String apellido,
+            String email,
+            String password) {
 
         String passwordEncriptada = passwordEncoder.encode(password);
 
@@ -29,8 +37,7 @@ public class UsuarioService {
                 nombre,
                 apellido,
                 email,
-                passwordEncriptada
-        );
+                passwordEncriptada);
     }
 
     // LOGIN
@@ -51,8 +58,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
-    //EDITAR PERFIL
-
+    // EDITAR PERFIL
 
     public void actualizarPerfil(
             String emailActual,
@@ -61,22 +67,30 @@ public class UsuarioService {
             String email,
             String telefono,
             String birthDate,
-            String photoUrl
-) {
+            String photoUrl) {
 
-    usuarioRepository.actualizarPerfil(
-            emailActual,
-            nombre,
-            apellido,
-            email,
-            telefono,
-            birthDate,
-            photoUrl
-    );
-}
-   
+        usuarioRepository.actualizarPerfil(
+                emailActual,
+                nombre,
+                apellido,
+                email,
+                telefono,
+                birthDate,
+                photoUrl);
+    }
 
+    // VALIDAR ROL DESDE USUARIO_CLUB
+    public RolValidacionDTO validarRol(String email) {
+        Optional<UsuarioClub> usuarioClub = usuarioClubRepository.findFirstByUsuarioEmail(email);
 
+        if (usuarioClub.isPresent()) {
+            UsuarioClub uc = usuarioClub.get();
+            return new RolValidacionDTO(
+                    uc.getRol(), // rol: "entrenador", "deportista", "admin"
+                    true, // tiene_panel
+                    uc.getClubId());
+        }
 
-
+        return new RolValidacionDTO(null, false, null);
+    }
 }
