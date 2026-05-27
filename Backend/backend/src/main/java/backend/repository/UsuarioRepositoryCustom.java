@@ -6,24 +6,21 @@ import java.util.Optional;
 
 public interface UsuarioRepositoryCustom {
 
-    void registrarUsuario(
-            String nombre,
-            String apellido,
-            String email,
-            String password
-    );
+        void registrarUsuario(
+                        String nombre,
+                        String apellido,
+                        String email,
+                        String password);
 
-    Optional<Usuario> buscarPorEmail(String email);
+        Optional<Usuario> buscarPorEmail(String email);
 
-
-    void actualizarPerfil(
-        String emailActual,
-        String nombre,
-        String apellido,
-        String email,
-        String telefono,
-        String birthDate,
-        String photoUrl
-);
+        Usuario actualizarPerfil(
+                        String emailActual,
+                        String nombre,
+                        String apellido,
+                        String email,
+                        String telefono,
+                        String birthDate,
+                        String photoUrl);
 
 }

@@ -113,7 +113,7 @@ public class UsuarioController {
             String email = (String) request.getAttribute("email");
 
             if (email == null) {
-                return ResponseEntity.status(401).body("No autorizado");
+                return ResponseEntity.status(401).body(Map.of("message", "No autorizado"));
             }
 
             Usuario usuario = usuarioService.obtenerPorEmail(email);
@@ -151,12 +151,19 @@ public class UsuarioController {
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Usuario no encontrado")) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Usuario no encontrado");
+                return ResponseEntity.status(401).body(error);
+            }
             e.printStackTrace();
-
             return ResponseEntity.status(500)
-                    .body("Error al obtener perfil");
+                    .body(Map.of("message", "Error al obtener perfil"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Error al obtener perfil"));
         }
     }
 
@@ -168,7 +175,7 @@ public class UsuarioController {
         try {
             String emailActual = (String) request.getAttribute("email");
 
-            usuarioService.actualizarPerfil(
+            Usuario usuarioActualizado = usuarioService.actualizarPerfil(
                     emailActual,
                     body.get("name"),
                     body.get("apellido"),
@@ -177,7 +184,13 @@ public class UsuarioController {
                     body.get("birthDate"),
                     body.get("photoUrl"));
 
-            return ResponseEntity.ok("Perfil actualizado");
+            String nuevoToken = JwtUtil.generarToken(usuarioActualizado);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Perfil actualizado");
+            response.put("token", nuevoToken);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
 

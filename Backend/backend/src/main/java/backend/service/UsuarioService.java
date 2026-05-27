@@ -60,7 +60,7 @@ public class UsuarioService {
 
     // EDITAR PERFIL
 
-    public void actualizarPerfil(
+    public Usuario actualizarPerfil(
             String emailActual,
             String nombre,
             String apellido,
@@ -69,7 +69,7 @@ public class UsuarioService {
             String birthDate,
             String photoUrl) {
 
-        usuarioRepository.actualizarPerfil(
+        return usuarioRepository.actualizarPerfil(
                 emailActual,
                 nombre,
                 apellido,
