@@ -540,7 +540,7 @@ public class ClubService {
 
         Long count = ((Number) entityManager
                 .createNativeQuery(
-                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
                 .setParameter(1, horarioId)
                 .setParameter(2, clubId)
                 .getSingleResult()).longValue();
@@ -565,7 +565,7 @@ public class ClubService {
 
         Long count = ((Number) entityManager
                 .createNativeQuery(
-                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
                 .setParameter(1, horarioId)
                 .setParameter(2, clubId)
                 .getSingleResult()).longValue();
@@ -575,6 +575,280 @@ public class ClubService {
         }
 
         clubRepository.eliminarHorarioEntrenamiento(horarioId);
+    }
+
+    public List<Map<String, Object>> getCategories(String email, String search) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        List<Object[]> rows = clubRepository.getCategoriasByClub(clubId, search == null ? "" : search);
+
+        List<Map<String, Object>> categories = new ArrayList<>();
+        for (Object[] row : rows) {
+            Long categoriaId = ((Number) row[0]).longValue();
+            Map<String, Object> category = new HashMap<>();
+            category.put("id", categoriaId);
+            category.put("clubId", ((Number) row[1]).longValue());
+            category.put("nombre", row[2]);
+            category.put("descripcion", row[3]);
+            category.put("createdAt", row[4]);
+            category.put("entrenadores", obtenerEntrenadoresPorCategoria(categoriaId));
+            category.put("deportistas", obtenerDeportistasPorCategoria(categoriaId));
+            categories.add(category);
+        }
+
+        return categories;
+    }
+
+    public Map<String, Object> getCategoryById(Long categoriaId) {
+        Object[] row = clubRepository.getCategoriaById(categoriaId);
+        if (row == null) {
+            return null;
+        }
+
+        Long categoryClubId = ((Number) row[1]).longValue();
+        Map<String, Object> category = new HashMap<>();
+        category.put("id", ((Number) row[0]).longValue());
+        category.put("clubId", categoryClubId);
+        category.put("nombre", row[2]);
+        category.put("descripcion", row[3]);
+        category.put("createdAt", row[4]);
+        category.put("entrenadores", obtenerEntrenadoresPorCategoria(((Number) row[0]).longValue()));
+        category.put("deportistas", obtenerDeportistasPorCategoria(((Number) row[0]).longValue()));
+        return category;
+    }
+
+    @Transactional
+    public Long createCategory(String email, String nombre, String descripcion, List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Long categoriaId = clubRepository.crearCategoria(clubId, nombre, descripcion);
+        asignarEntrenadoresCategoria(categoriaId, entrenadorIds);
+        return categoriaId;
+    }
+
+    @Transactional
+    public void updateCategory(Long categoriaId, String email, String nombre, String descripcion,
+            List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getCategoriaById(categoriaId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Categoría no encontrada o no pertenece al club");
+        }
+
+        clubRepository.actualizarCategoria(categoriaId, nombre, descripcion);
+        asignarEntrenadoresCategoria(categoriaId, entrenadorIds);
+    }
+
+    @Transactional
+    public void deleteCategory(Long categoriaId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getCategoriaById(categoriaId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Categoría no encontrada o no pertenece al club");
+        }
+
+        clubRepository.eliminarCategoria(categoriaId);
+    }
+
+    private void asignarEntrenadoresCategoria(Long categoriaId, List<Long> entrenadorIds) {
+        clubRepository.clearEntrenadoresCategoria(categoriaId);
+        if (entrenadorIds == null) {
+            return;
+        }
+        for (Long entrenadorId : entrenadorIds) {
+            clubRepository.insertEntrenadorCategoria(categoriaId, entrenadorId);
+        }
+    }
+
+    public List<Map<String, Object>> getGroups(String email, String search) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        List<Object[]> rows = clubRepository.getGruposByClub(clubId, search == null ? "" : search);
+
+        List<Map<String, Object>> groups = new ArrayList<>();
+        for (Object[] row : rows) {
+            Long grupoId = ((Number) row[0]).longValue();
+            Map<String, Object> group = new HashMap<>();
+            group.put("id", grupoId);
+            group.put("clubId", ((Number) row[1]).longValue());
+            group.put("nombre", row[2]);
+            group.put("descripcion", row[3]);
+            group.put("createdAt", row[4]);
+            group.put("entrenadores", obtenerEntrenadoresPorGrupo(grupoId));
+            group.put("deportistas", obtenerDeportistasPorGrupo(grupoId));
+            groups.add(group);
+        }
+
+        return groups;
+    }
+
+    public Map<String, Object> getGroupById(Long grupoId) {
+        Object[] row = clubRepository.getGrupoById(grupoId);
+        if (row == null) {
+            return null;
+        }
+
+        Map<String, Object> group = new HashMap<>();
+        group.put("id", ((Number) row[0]).longValue());
+        group.put("clubId", ((Number) row[1]).longValue());
+        group.put("nombre", row[2]);
+        group.put("descripcion", row[3]);
+        group.put("createdAt", row[4]);
+        group.put("entrenadores", obtenerEntrenadoresPorGrupo(((Number) row[0]).longValue()));
+        group.put("deportistas", obtenerDeportistasPorGrupo(((Number) row[0]).longValue()));
+        return group;
+    }
+
+    @Transactional
+    public Long createGroup(String email, String nombre, String descripcion, List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Long grupoId = clubRepository.crearGrupoDeportivo(clubId, nombre, descripcion);
+        asignarEntrenadoresGrupo(grupoId, entrenadorIds);
+        return grupoId;
+    }
+
+    @Transactional
+    public void updateGroup(Long grupoId, String email, String nombre, String descripcion, List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getGrupoById(grupoId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Grupo no encontrado o no pertenece al club");
+        }
+
+        clubRepository.actualizarGrupoDeportivo(grupoId, nombre, descripcion);
+        asignarEntrenadoresGrupo(grupoId, entrenadorIds);
+    }
+
+    @Transactional
+    public void deleteGroup(Long grupoId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getGrupoById(grupoId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Grupo no encontrado o no pertenece al club");
+        }
+
+        clubRepository.eliminarGrupoDeportivo(grupoId);
+    }
+
+    private void asignarEntrenadoresGrupo(Long grupoId, List<Long> entrenadorIds) {
+        clubRepository.clearEntrenadoresGrupo(grupoId);
+        if (entrenadorIds == null) {
+            return;
+        }
+        for (Long entrenadorId : entrenadorIds) {
+            clubRepository.insertGrupoEntrenador(grupoId, entrenadorId);
+        }
+    }
+
+    private List<Map<String, Object>> obtenerEntrenadoresPorCategoria(Long categoriaId) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager.createNativeQuery(
+                "SELECT e.id, u.id, u.nombre, u.apellido, u.email, e.experiencia, e.especialidad " +
+                        "FROM entrenador_categoria ec " +
+                        "JOIN entrenador e ON ec.entrenador_id = e.id " +
+                        "JOIN usuario_club uc ON uc.id = e.usuario_club_id " +
+                        "JOIN usuario u ON u.id = uc.usuario_id " +
+                        "WHERE ec.categoria_id = ? " +
+                        "AND e.deleted_at IS NULL " +
+                        "AND uc.estado = 'activo'")
+                .setParameter(1, categoriaId)
+                .getResultList();
+
+        List<Map<String, Object>> trainers = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("entrenadorId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("experiencia", row[5]);
+            item.put("especialidad", row[6]);
+            trainers.add(item);
+        }
+        return trainers;
+    }
+
+    private List<Map<String, Object>> obtenerDeportistasPorCategoria(Long categoriaId) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager.createNativeQuery(
+                "SELECT d.id, u.id, u.nombre, u.apellido, u.email, d.peso, d.estatura " +
+                        "FROM deportista d " +
+                        "JOIN usuario_club uc ON uc.id = d.usuario_club_id " +
+                        "JOIN usuario u ON u.id = uc.usuario_id " +
+                        "WHERE d.categoria_id = ? " +
+                        "AND d.deleted_at IS NULL " +
+                        "AND uc.estado = 'activo'")
+                .setParameter(1, categoriaId)
+                .getResultList();
+
+        List<Map<String, Object>> athletes = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("deportistaId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("peso", row[5]);
+            item.put("estatura", row[6]);
+            athletes.add(item);
+        }
+        return athletes;
+    }
+
+    private List<Map<String, Object>> obtenerEntrenadoresPorGrupo(Long grupoId) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager.createNativeQuery(
+                "SELECT e.id, u.id, u.nombre, u.apellido, u.email, e.experiencia, e.especialidad " +
+                        "FROM grupo_entrenador ge " +
+                        "JOIN entrenador e ON ge.entrenador_id = e.id " +
+                        "JOIN usuario_club uc ON uc.id = e.usuario_club_id " +
+                        "JOIN usuario u ON u.id = uc.usuario_id " +
+                        "WHERE ge.grupo_id = ? " +
+                        "AND e.deleted_at IS NULL " +
+                        "AND uc.estado = 'activo'")
+                .setParameter(1, grupoId)
+                .getResultList();
+
+        List<Map<String, Object>> trainers = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("entrenadorId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("experiencia", row[5]);
+            item.put("especialidad", row[6]);
+            trainers.add(item);
+        }
+        return trainers;
+    }
+
+    private List<Map<String, Object>> obtenerDeportistasPorGrupo(Long grupoId) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = entityManager.createNativeQuery(
+                "SELECT d.id, u.id, u.nombre, u.apellido, u.email, d.peso, d.estatura " +
+                        "FROM deportista d " +
+                        "JOIN usuario_club uc ON uc.id = d.usuario_club_id " +
+                        "JOIN usuario u ON u.id = uc.usuario_id " +
+                        "WHERE d.grupo_id = ? " +
+                        "AND d.deleted_at IS NULL " +
+                        "AND uc.estado = 'activo'")
+                .setParameter(1, grupoId)
+                .getResultList();
+
+        List<Map<String, Object>> athletes = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("deportistaId", ((Number) row[0]).longValue());
+            item.put("usuarioId", ((Number) row[1]).longValue());
+            item.put("nombre", row[2]);
+            item.put("apellido", row[3]);
+            item.put("email", row[4]);
+            item.put("peso", row[5]);
+            item.put("estatura", row[6]);
+            athletes.add(item);
+        }
+        return athletes;
     }
 
     private Long obtenerClubIdDelAdmin(String email) {

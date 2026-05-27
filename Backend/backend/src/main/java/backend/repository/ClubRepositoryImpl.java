@@ -264,4 +264,138 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                 .getResultList();
         }
 
+        @Override
+        @SuppressWarnings("unchecked")
+        public Long crearCategoria(Long clubId, String nombre, String descripcion) {
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_categoria(?,?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .getSingleResult();
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarCategoria(Long categoriaId, String nombre, String descripcion) {
+                entityManager
+                                .createNativeQuery("CALL sp_update_categoria(?,?,?)")
+                                .setParameter(1, categoriaId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void eliminarCategoria(Long categoriaId) {
+                entityManager
+                                .createNativeQuery("CALL sp_delete_categoria(?)")
+                                .setParameter(1, categoriaId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getCategoriasByClub(Long clubId, String search) {
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_categorias_by_club(?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, search == null ? "" : search)
+                                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object[] getCategoriaById(Long categoriaId) {
+                List<Object[]> result = (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_categoria_by_id(?)")
+                                .setParameter(1, categoriaId)
+                                .getResultList();
+                return result.isEmpty() ? null : result.get(0);
+        }
+
+        @Override
+        public void clearEntrenadoresCategoria(Long categoriaId) {
+                entityManager
+                                .createNativeQuery("CALL sp_clear_entrenadores_categoria(?)")
+                                .setParameter(1, categoriaId)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void insertEntrenadorCategoria(Long categoriaId, Long entrenadorId) {
+                entityManager
+                                .createNativeQuery("CALL sp_insert_entrenador_categoria(?,?)")
+                                .setParameter(1, categoriaId)
+                                .setParameter(2, entrenadorId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Long crearGrupoDeportivo(Long clubId, String nombre, String descripcion) {
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_grupo_deportivo(?,?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .getSingleResult();
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarGrupoDeportivo(Long grupoId, String nombre, String descripcion) {
+                entityManager
+                                .createNativeQuery("CALL sp_update_grupo_deportivo(?,?,?)")
+                                .setParameter(1, grupoId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void eliminarGrupoDeportivo(Long grupoId) {
+                entityManager
+                                .createNativeQuery("CALL sp_delete_grupo_deportivo(?)")
+                                .setParameter(1, grupoId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getGruposByClub(Long clubId, String search) {
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_grupos_by_club(?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, search == null ? "" : search)
+                                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object[] getGrupoById(Long grupoId) {
+                List<Object[]> result = (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_grupo_by_id(?)")
+                                .setParameter(1, grupoId)
+                                .getResultList();
+                return result.isEmpty() ? null : result.get(0);
+        }
+
+        @Override
+        public void clearEntrenadoresGrupo(Long grupoId) {
+                entityManager
+                                .createNativeQuery("CALL sp_clear_entrenadores_grupo(?)")
+                                .setParameter(1, grupoId)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void insertGrupoEntrenador(Long grupoId, Long entrenadorId) {
+                entityManager
+                                .createNativeQuery("CALL sp_insert_grupo_entrenador(?,?)")
+                                .setParameter(1, grupoId)
+                                .setParameter(2, entrenadorId)
+                                .executeUpdate();
+        }
+
 }

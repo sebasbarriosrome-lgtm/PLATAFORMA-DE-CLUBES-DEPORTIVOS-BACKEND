@@ -5,6 +5,7 @@ import backend.service.ClubService;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -466,6 +467,202 @@ public class ClubController {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories(
+            @RequestParam(required = false) String search,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            return ResponseEntity.ok(clubService.getCategories(email, search));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/categories/{id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
+        try {
+            var category = clubService.getCategoryById(id);
+            if (category == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(category);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/categories")
+    public ResponseEntity<?> createCategory(
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            String nombre = (String) body.get("nombre");
+            String descripcion = (String) body.get("descripcion");
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.createCategory(email, nombre, descripcion, ids);
+            return ResponseEntity.ok(Map.of("message", "Categoría creada"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/categories/{id}")
+    public ResponseEntity<?> updateCategory(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            String nombre = (String) body.get("nombre");
+            String descripcion = (String) body.get("descripcion");
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.updateCategory(id, email, nombre, descripcion, ids);
+            return ResponseEntity.ok(Map.of("message", "Categoría actualizada"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<?> deleteCategory(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            clubService.deleteCategory(id, email);
+            return ResponseEntity.ok(Map.of("message", "Categoría eliminada"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/groups")
+    public ResponseEntity<?> getGroups(
+            @RequestParam(required = false) String search,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            return ResponseEntity.ok(clubService.getGroups(email, search));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/groups/{id}")
+    public ResponseEntity<?> getGroupById(@PathVariable Long id) {
+        try {
+            var group = clubService.getGroupById(id);
+            if (group == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(group);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/groups")
+    public ResponseEntity<?> createGroup(
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            String nombre = (String) body.get("nombre");
+            String descripcion = (String) body.get("descripcion");
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.createGroup(email, nombre, descripcion, ids);
+            return ResponseEntity.ok(Map.of("message", "Grupo creado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/groups/{id}")
+    public ResponseEntity<?> updateGroup(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            String nombre = (String) body.get("nombre");
+            String descripcion = (String) body.get("descripcion");
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.updateGroup(id, email, nombre, descripcion, ids);
+            return ResponseEntity.ok(Map.of("message", "Grupo actualizado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/groups/{id}")
+    public ResponseEntity<?> deleteGroup(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            clubService.deleteGroup(id, email);
+            return ResponseEntity.ok(Map.of("message", "Grupo eliminado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 

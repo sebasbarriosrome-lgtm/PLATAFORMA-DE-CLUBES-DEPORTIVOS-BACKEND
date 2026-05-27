@@ -69,4 +69,34 @@ public interface ClubRepositoryCustom {
 
         List<Object[]> getHorariosByClubId(Long clubId);
 
+        // Categorías
+        Long crearCategoria(Long clubId, String nombre, String descripcion);
+
+        void actualizarCategoria(Long categoriaId, String nombre, String descripcion);
+
+        void eliminarCategoria(Long categoriaId);
+
+        List<Object[]> getCategoriasByClub(Long clubId, String search);
+
+        Object[] getCategoriaById(Long categoriaId);
+
+        void clearEntrenadoresCategoria(Long categoriaId);
+
+        void insertEntrenadorCategoria(Long categoriaId, Long entrenadorId);
+
+        // Grupos
+        Long crearGrupoDeportivo(Long clubId, String nombre, String descripcion);
+
+        void actualizarGrupoDeportivo(Long grupoId, String nombre, String descripcion);
+
+        void eliminarGrupoDeportivo(Long grupoId);
+
+        List<Object[]> getGruposByClub(Long clubId, String search);
+
+        Object[] getGrupoById(Long grupoId);
+
+        void clearEntrenadoresGrupo(Long grupoId);
+
+        void insertGrupoEntrenador(Long grupoId, Long entrenadorId);
+
 }
