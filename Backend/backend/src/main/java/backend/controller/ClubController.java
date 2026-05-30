@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/clubs")
@@ -395,6 +396,14 @@ public class ClubController {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
             }
 
+            // validar y normalizar día (aceptar mayúsculas/minúsculas)
+            Set<String> validDays = Set.of("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo");
+            String diaLower = dia.toLowerCase();
+            if (!validDays.contains(diaLower)) {
+                return ResponseEntity.badRequest().body("Dia inválido");
+            }
+            dia = diaLower;
+
             Long horarioId = clubService.crearHorario(
                     email,
                     dia,
@@ -437,6 +446,14 @@ public class ClubController {
             if (dia == null || horaInicio == null || horaFin == null) {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
             }
+
+            // validar y normalizar día
+            Set<String> validDays = Set.of("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo");
+            String diaLower = dia.toLowerCase();
+            if (!validDays.contains(diaLower)) {
+                return ResponseEntity.badRequest().body("Dia inválido");
+            }
+            dia = diaLower;
 
             clubService.actualizarHorario(
                     id,

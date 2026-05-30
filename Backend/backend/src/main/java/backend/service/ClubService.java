@@ -505,7 +505,15 @@ public class ClubService {
     public List<Map<String, Object>> getHorariosClub(String email) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
+        System.out.println("🔍 DEBUG getHorariosClub - Email: " + email + ", ClubId: " + clubId);
+
         List<Object[]> results = clubRepository.getHorariosByClubId(clubId);
+        System.out.println("🔍 DEBUG getHorariosClub - Resultados: " + results.size() + " horarios encontrados");
+
+        if (!results.isEmpty()) {
+            Object[] firstRow = results.get(0);
+            System.out.println("🔍 DEBUG getHorariosClub - Primer horario: id=" + firstRow[0] + ", dia=" + firstRow[1]);
+        }
 
         return mapHorarios(results);
     }
@@ -518,14 +526,14 @@ public class ClubService {
 
     @Transactional
     public Long crearHorario(
-        String email,
-        String dia,
-        String horaInicio,
-        String horaFin,
-        String descripcion,
-        String ubicacion,
-        Long grupoId,
-        String categoria) {
+            String email,
+            String dia,
+            String horaInicio,
+            String horaFin,
+            String descripcion,
+            String ubicacion,
+            Long grupoId,
+            String categoria) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
@@ -542,24 +550,24 @@ public class ClubService {
 
     @Transactional
     public void actualizarHorario(
-        Long horarioId,
-        String email,
-        String dia,
-        String horaInicio,
-        String horaFin,
-        String descripcion,
-        String ubicacion,
-        Long grupoId,
-        String categoria) {
+            Long horarioId,
+            String email,
+            String dia,
+            String horaInicio,
+            String horaFin,
+            String descripcion,
+            String ubicacion,
+            Long grupoId,
+            String categoria) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
         Long count = ((Number) entityManager
-            .createNativeQuery(
-                "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
-            .setParameter(1, horarioId)
-            .setParameter(2, clubId)
-            .getSingleResult()).longValue();
+                .createNativeQuery(
+                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
+                .setParameter(1, horarioId)
+                .setParameter(2, clubId)
+                .getSingleResult()).longValue();
 
         if (count == 0) {
             throw new RuntimeException("Horario no encontrado o no pertenece al club");
@@ -902,29 +910,36 @@ public class ClubService {
         var usuario = usuarioRepository.buscarPorEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Email: " + email + ", UsuarioId: " + usuario.getId());
+
         Map<String, Object> panel = (Map<String, Object>) clubRepository.getPanelClubData(usuario.getId());
 
         if (panel != null && panel.get("id") != null) {
-            return ((Number) panel.get("id")).longValue();
+            Long clubId = ((Number) panel.get("id")).longValue();
+            System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Es admin, ClubId: " + clubId);
+            return clubId;
         }
 
         // Si no es admin, intentar resolver el club a partir de su rol de entrenador
         @SuppressWarnings("unchecked")
         List<Object> trainerClubResults = entityManager.createNativeQuery(
-                        "SELECT uc.club_id " +
-                                "FROM usuario_club uc " +
-                                "JOIN entrenador e ON e.usuario_club_id = uc.id " +
-                                "WHERE uc.usuario_id = ? " +
-                                "AND uc.rol = 'entrenador' " +
-                                "LIMIT 1")
+                "SELECT uc.club_id " +
+                        "FROM usuario_club uc " +
+                        "JOIN entrenador e ON e.usuario_club_id = uc.id " +
+                        "WHERE uc.usuario_id = ? " +
+                        "AND uc.rol = 'entrenador' " +
+                        "LIMIT 1")
                 .setParameter(1, usuario.getId())
                 .getResultList();
 
         if (trainerClubResults.isEmpty()) {
+            System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - ERROR: No es admin y no es entrenador de ningún club");
             throw new RuntimeException("No tiene club asociado");
         }
 
-        return ((Number) trainerClubResults.get(0)).longValue();
+        Long clubId = ((Number) trainerClubResults.get(0)).longValue();
+        System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Es entrenador, ClubId: " + clubId);
+        return clubId;
     }
 
     private List<Map<String, Object>> mapHorarios(List<Object[]> results) {
