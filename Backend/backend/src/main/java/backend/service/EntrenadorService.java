@@ -66,9 +66,15 @@ public class EntrenadorService {
 
             grupoMap.put("deportistas", atletasResp);
 
-            // obtener horarios del grupo (usamos el SP si existe)
+            // obtener horarios del grupo con consulta directa para evitar dependencias de procedimientos almacenados
+            @SuppressWarnings("unchecked")
             List<Object[]> horarios = entityManager
-                    .createNativeQuery("CALL sp_get_horarios_by_grupo(?)")
+                    .createNativeQuery(
+                            "SELECT he.id, he.dia_semana, TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, " +
+                                    "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, he.descripcion, he.ubicacion, he.activo " +
+                                    "FROM horario_entrenamiento he " +
+                                    "WHERE he.grupo_id = ? AND he.activo = TRUE AND he.deleted_at IS NULL " +
+                                    "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio")
                     .setParameter(1, grupoId)
                     .getResultList();
 

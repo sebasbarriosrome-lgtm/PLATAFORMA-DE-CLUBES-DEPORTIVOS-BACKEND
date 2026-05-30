@@ -6,10 +6,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
+import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.util.Optional;
 import java.util.List;
 
@@ -62,6 +64,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepositoryCustom {
                 }
         }
 
+        @Transactional
         @Override
         public Usuario actualizarPerfil(
                         String emailActual,
@@ -102,7 +105,7 @@ public class UsuarioRepositoryImpl implements UsuarioRepositoryCustom {
 
                 query.registerStoredProcedureParameter(
                                 "p_birthDate",
-                                String.class,
+                                Date.class,
                                 ParameterMode.IN);
 
                 query.registerStoredProcedureParameter(
@@ -115,13 +118,19 @@ public class UsuarioRepositoryImpl implements UsuarioRepositoryCustom {
                 query.setParameter("p_apellido", apellido);
                 query.setParameter("p_email", email);
                 query.setParameter("p_telefono", telefono);
-                query.setParameter("p_birthDate", birthDate);
+                Date birthDateValue = birthDate == null || birthDate.isBlank()
+                                ? null
+                                : Date.valueOf(birthDate);
+                query.setParameter("p_birthDate", birthDateValue);
                 query.setParameter("p_photoUrl", photoUrl);
 
                 query.execute();
                 entityManager.flush();
 
-                return buscarPorEmail(email)
+                // Buscar por el email final (nuevo email si cambió, o email actual)
+                String emailFinal = (email != null && !email.isBlank()) ? email : emailActual;
+
+                return buscarPorEmail(emailFinal)
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Usuario no encontrado después de actualizar perfil"));
         }

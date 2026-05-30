@@ -4,9 +4,9 @@ import backend.entity.Usuario;
 import backend.entity.UsuarioClub;
 import backend.repository.UsuarioRepository;
 import backend.repository.UsuarioClubRepository;
-import backend.dto.RolValidacionDTO;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -60,6 +60,7 @@ public class UsuarioService {
 
     // EDITAR PERFIL
 
+    @Transactional
     public Usuario actualizarPerfil(
             String emailActual,
             String nombre,
@@ -80,17 +81,22 @@ public class UsuarioService {
     }
 
     // VALIDAR ROL DESDE USUARIO_CLUB
-    public RolValidacionDTO validarRol(String email) {
+    public java.util.Map<String, Object> validarRol(String email) {
         Optional<UsuarioClub> usuarioClub = usuarioClubRepository.findFirstByUsuarioEmail(email);
+
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
 
         if (usuarioClub.isPresent()) {
             UsuarioClub uc = usuarioClub.get();
-            return new RolValidacionDTO(
-                    uc.getRol(), // rol: "entrenador", "deportista", "admin"
-                    true, // tiene_panel
-                    uc.getClubId());
+            resp.put("rol", uc.getRol()); // rol: "entrenador", "deportista", "admin"
+            resp.put("tienePanel", true);
+            resp.put("clubId", uc.getClubId());
+            return resp;
         }
 
-        return new RolValidacionDTO(null, false, null);
+        resp.put("rol", null);
+        resp.put("tienePanel", false);
+        resp.put("clubId", null);
+        return resp;
     }
 }

@@ -4,7 +4,6 @@ import backend.entity.Usuario;
 import backend.repository.PerfilUsuarioRepository;
 import backend.security.JwtUtil;
 import backend.service.UsuarioService;
-import backend.dto.RolValidacionDTO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.ResponseEntity;
@@ -95,7 +94,7 @@ public class UsuarioController {
                 return ResponseEntity.status(401).body("No autorizado");
             }
 
-            RolValidacionDTO validacion = usuarioService.validarRol(email);
+            java.util.Map<String, Object> validacion = usuarioService.validarRol(email);
             return ResponseEntity.ok(validacion);
 
         } catch (Exception e) {
@@ -175,14 +174,52 @@ public class UsuarioController {
         try {
             String emailActual = (String) request.getAttribute("email");
 
+            if (emailActual == null) {
+                return ResponseEntity.status(401).body(Map.of("message", "No autorizado"));
+            }
+
+            String nombre = body.getOrDefault("name", body.get("nombre"));
+            String apellido = body.getOrDefault("apellido", body.get("apellidos"));
+            String email = body.get("email");
+            String telefono = body.get("telefono");
+            String birthDate = body.get("birthDate");
+            String photoUrl = body.get("photoUrl");
+
+            // Normalizar campos vacíos a null
+            nombre = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
+            apellido = (apellido != null && !apellido.trim().isEmpty()) ? apellido.trim() : null;
+            email = (email != null && !email.trim().isEmpty()) ? email.trim() : null;
+            telefono = (telefono != null && !telefono.trim().isEmpty()) ? telefono.trim() : null;
+            birthDate = (birthDate != null && !birthDate.trim().isEmpty()) ? birthDate.trim() : null;
+            photoUrl = (photoUrl != null && !photoUrl.trim().isEmpty()) ? photoUrl.trim() : null;
+
+            // Si no se proporciona email nuevo, usar el actual
+            if (email == null) {
+                email = emailActual;
+            }
+
+            // Validar que nombre y apellido no sean null al mismo tiempo
+            if (nombre == null && apellido == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "El nombre es requerido"));
+            }
+
+            if ((apellido == null || apellido.isBlank()) && nombre != null && nombre.contains(" ")) {
+                int spaceIndex = nombre.indexOf(' ');
+                apellido = nombre.substring(spaceIndex + 1).trim();
+                nombre = nombre.substring(0, spaceIndex).trim();
+            } else if (nombre != null && nombre.contains(" ") && apellido != null && !apellido.isBlank()) {
+                nombre = nombre.split(" ")[0];
+            }
+
             Usuario usuarioActualizado = usuarioService.actualizarPerfil(
                     emailActual,
-                    body.get("name"),
-                    body.get("apellido"),
-                    body.get("email"),
-                    body.get("telefono"),
-                    body.get("birthDate"),
-                    body.get("photoUrl"));
+                    nombre,
+                    apellido,
+                    email,
+                    telefono,
+                    birthDate,
+                    photoUrl);
 
             String nuevoToken = JwtUtil.generarToken(usuarioActualizado);
 
@@ -192,21 +229,35 @@ public class UsuarioController {
 
             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
             Map<String, String> error = new HashMap<>();
+            String message = e.getMessage() != null ? e.getMessage() : "Datos inválidos";
+            error.put("message", message);
+            return ResponseEntity.badRequest().body(error);
 
-            if (e.getMessage().contains("correo")) {
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            String message = e.getMessage() != null ? e.getMessage() : "Error al actualizar perfil";
+
+            if (message.contains("correo") || message.contains("email")) {
                 error.put("message", "El correo ya está registrado");
-            } else if (e.getMessage().contains("teléfono")) {
+            } else if (message.contains("teléfono") || message.contains("telefono")) {
                 error.put("message", "El teléfono ya está registrado");
-            } else if (e.getMessage().contains("fecha")) {
+            } else if (message.contains("fecha") || message.contains("date")) {
                 error.put("message", "Fecha de nacimiento inválida");
             } else {
-                error.put("message", "Error al actualizar perfil");
+                error.put("message", message);
             }
 
             return ResponseEntity.badRequest().body(error);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Error inesperado: " + (e.getMessage() != null ? e.getMessage() : "Desconocido"));
+            return ResponseEntity.status(500).body(error);
         }
     }
 

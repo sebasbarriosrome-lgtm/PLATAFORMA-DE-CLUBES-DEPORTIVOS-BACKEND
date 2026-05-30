@@ -416,6 +416,16 @@ public class ClubService {
             throw new RuntimeException("El entrenador no pertenece a tu club");
         }
 
+        // Primero eliminar asociaciones en tablas intermedias para evitar FK violations
+        entityManager.createNativeQuery("DELETE FROM entrenador_categoria WHERE entrenador_id = ?")
+                .setParameter(1, entrenadorId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM grupo_entrenador WHERE entrenador_id = ?")
+                .setParameter(1, entrenadorId)
+                .executeUpdate();
+
+        // Luego eliminar el entrenador y el usuario_club
         entityManager.createNativeQuery("DELETE FROM entrenador WHERE id = ?")
                 .setParameter(1, entrenadorId)
                 .executeUpdate();
@@ -508,42 +518,48 @@ public class ClubService {
 
     @Transactional
     public Long crearHorario(
-            String email,
-            String dia,
-            String horaInicio,
-            String horaFin,
-            String descripcion,
-            String ubicacion) {
+        String email,
+        String dia,
+        String horaInicio,
+        String horaFin,
+        String descripcion,
+        String ubicacion,
+        Long grupoId,
+        String categoria) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
         return clubRepository.crearHorarioEntrenamiento(
                 clubId,
+                grupoId,
                 dia,
                 horaInicio,
                 horaFin,
                 descripcion,
-                ubicacion);
+                ubicacion,
+                categoria);
     }
 
     @Transactional
     public void actualizarHorario(
-            Long horarioId,
-            String email,
-            String dia,
-            String horaInicio,
-            String horaFin,
-            String descripcion,
-            String ubicacion) {
+        Long horarioId,
+        String email,
+        String dia,
+        String horaInicio,
+        String horaFin,
+        String descripcion,
+        String ubicacion,
+        Long grupoId,
+        String categoria) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
         Long count = ((Number) entityManager
-                .createNativeQuery(
-                        "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
-                .setParameter(1, horarioId)
-                .setParameter(2, clubId)
-                .getSingleResult()).longValue();
+            .createNativeQuery(
+                "SELECT COUNT(*) FROM horario_entrenamiento WHERE id = ? AND grupo_id IN (SELECT id FROM grupo_deportivo WHERE club_id = ?) AND deleted_at IS NULL")
+            .setParameter(1, horarioId)
+            .setParameter(2, clubId)
+            .getSingleResult()).longValue();
 
         if (count == 0) {
             throw new RuntimeException("Horario no encontrado o no pertenece al club");
@@ -551,11 +567,13 @@ public class ClubService {
 
         clubRepository.actualizarHorarioEntrenamiento(
                 horarioId,
+                grupoId,
                 dia,
                 horaInicio,
                 horaFin,
                 descripcion,
-                ubicacion);
+                ubicacion,
+                categoria);
     }
 
     @Transactional
@@ -638,6 +656,16 @@ public class ClubService {
     }
 
     @Transactional
+    public void assignEntrenadoresToCategory(Long categoriaId, String email, List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getCategoriaById(categoriaId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Categoría no encontrada o no pertenece al club");
+        }
+        asignarEntrenadoresCategoria(categoriaId, entrenadorIds);
+    }
+
+    @Transactional
     public void deleteCategory(Long categoriaId, String email) {
         Long clubId = obtenerClubIdDelAdmin(email);
         Object[] row = clubRepository.getCategoriaById(categoriaId);
@@ -645,6 +673,10 @@ public class ClubService {
             throw new RuntimeException("Categoría no encontrada o no pertenece al club");
         }
 
+        // Limpiar asociaciones de entrenadores en la categoría antes de eliminar
+        clubRepository.clearEntrenadoresCategoria(categoriaId);
+
+        // Eliminar la categoría
         clubRepository.eliminarCategoria(categoriaId);
     }
 
@@ -717,6 +749,16 @@ public class ClubService {
     }
 
     @Transactional
+    public void assignEntrenadoresToGroup(Long grupoId, String email, List<Long> entrenadorIds) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+        Object[] row = clubRepository.getGrupoById(grupoId);
+        if (row == null || ((Number) row[1]).longValue() != clubId) {
+            throw new RuntimeException("Grupo no encontrado o no pertenece al club");
+        }
+        asignarEntrenadoresGrupo(grupoId, entrenadorIds);
+    }
+
+    @Transactional
     public void deleteGroup(Long grupoId, String email) {
         Long clubId = obtenerClubIdDelAdmin(email);
         Object[] row = clubRepository.getGrupoById(grupoId);
@@ -724,6 +766,10 @@ public class ClubService {
             throw new RuntimeException("Grupo no encontrado o no pertenece al club");
         }
 
+        // Limpiar asociaciones de entrenadores en el grupo antes de eliminar
+        clubRepository.clearEntrenadoresGrupo(grupoId);
+
+        // Eliminar el grupo
         clubRepository.eliminarGrupoDeportivo(grupoId);
     }
 
@@ -858,12 +904,27 @@ public class ClubService {
 
         Map<String, Object> panel = (Map<String, Object>) clubRepository.getPanelClubData(usuario.getId());
 
-        if (panel == null) {
-            throw new RuntimeException("No tiene club");
+        if (panel != null && panel.get("id") != null) {
+            return ((Number) panel.get("id")).longValue();
         }
 
-        // El repositorio devuelve el mapa con la clave 'id'
-        return ((Number) panel.get("id")).longValue();
+        // Si no es admin, intentar resolver el club a partir de su rol de entrenador
+        @SuppressWarnings("unchecked")
+        List<Object> trainerClubResults = entityManager.createNativeQuery(
+                        "SELECT uc.club_id " +
+                                "FROM usuario_club uc " +
+                                "JOIN entrenador e ON e.usuario_club_id = uc.id " +
+                                "WHERE uc.usuario_id = ? " +
+                                "AND uc.rol = 'entrenador' " +
+                                "LIMIT 1")
+                .setParameter(1, usuario.getId())
+                .getResultList();
+
+        if (trainerClubResults.isEmpty()) {
+            throw new RuntimeException("No tiene club asociado");
+        }
+
+        return ((Number) trainerClubResults.get(0)).longValue();
     }
 
     private List<Map<String, Object>> mapHorarios(List<Object[]> results) {
@@ -879,6 +940,17 @@ public class ClubService {
             item.put("descripcion", row[4]);
             item.put("ubicacion", row[5]);
             item.put("estado", row[6]);
+            // nuevo: grupoId y categoria (si la consulta los retorna en posiciones 7 y 8)
+            if (row.length > 7) {
+                item.put("grupoId", row[7] == null ? null : ((Number) row[7]).longValue());
+            } else {
+                item.put("grupoId", null);
+            }
+            if (row.length > 8) {
+                item.put("categoria", row[8]);
+            } else {
+                item.put("categoria", null);
+            }
             response.add(item);
         }
 

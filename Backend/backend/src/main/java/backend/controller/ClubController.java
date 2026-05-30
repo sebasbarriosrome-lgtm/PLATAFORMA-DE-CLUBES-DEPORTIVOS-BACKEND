@@ -387,8 +387,11 @@ public class ClubController {
             String horaFin = body.get("horaFin");
             String ubicacion = body.get("ubicacion");
             String descripcion = body.get("descripcion");
+            // nuevo: destinatario
+            Long grupoId = body.get("grupoId") != null ? Long.valueOf(body.get("grupoId")) : null;
+            String categoria = body.get("categoria");
 
-            if (dia == null || horaInicio == null || horaFin == null || ubicacion == null) {
+            if (dia == null || horaInicio == null || horaFin == null) {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
             }
 
@@ -398,7 +401,9 @@ public class ClubController {
                     horaInicio,
                     horaFin,
                     descripcion,
-                    ubicacion);
+                    ubicacion,
+                    grupoId,
+                    categoria);
 
             return ResponseEntity.ok(Map.of("id", horarioId));
         } catch (Exception e) {
@@ -426,8 +431,10 @@ public class ClubController {
             String horaFin = body.get("horaFin");
             String ubicacion = body.get("ubicacion");
             String descripcion = body.get("descripcion");
+            Long grupoId = body.get("grupoId") != null ? Long.valueOf(body.get("grupoId")) : null;
+            String categoria = body.get("categoria");
 
-            if (dia == null || horaInicio == null || horaFin == null || ubicacion == null) {
+            if (dia == null || horaInicio == null || horaFin == null) {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
             }
 
@@ -438,7 +445,9 @@ public class ClubController {
                     horaInicio,
                     horaFin,
                     descripcion,
-                    ubicacion);
+                    ubicacion,
+                    grupoId,
+                    categoria);
 
             return ResponseEntity.ok("Horario actualizado");
         } catch (Exception e) {
@@ -551,6 +560,30 @@ public class ClubController {
         }
     }
 
+    @PutMapping("/categories/{id}/entrenadores")
+    public ResponseEntity<?> assignCategoryEntrenadores(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.assignEntrenadoresToCategory(id, email, ids);
+            return ResponseEntity.ok(Map.of("message", "Entrenadores asignados a la categoría"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/categories/{id}")
     public ResponseEntity<?> deleteCategory(
             @PathVariable Long id,
@@ -643,6 +676,30 @@ public class ClubController {
                             .toList();
             clubService.updateGroup(id, email, nombre, descripcion, ids);
             return ResponseEntity.ok(Map.of("message", "Grupo actualizado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/groups/{id}/entrenadores")
+    public ResponseEntity<?> assignGroupEntrenadores(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+            List<?> entrenadorIds = (List<?>) body.get("entrenadorIds");
+            var ids = entrenadorIds == null ? List.<Long>of()
+                    : entrenadorIds.stream()
+                            .filter(it -> it != null)
+                            .map(it -> it instanceof Number ? ((Number) it).longValue() : Long.valueOf(it.toString()))
+                            .toList();
+            clubService.assignEntrenadoresToGroup(id, email, ids);
+            return ResponseEntity.ok(Map.of("message", "Entrenadores asignados al grupo"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

@@ -49,19 +49,23 @@ public interface ClubRepositoryCustom {
         // ✅ horarios de entrenamiento
         Long crearHorarioEntrenamiento(
                         Long clubId,
+                        Long grupoId,
                         String dia,
                         String horaInicio,
                         String horaFin,
                         String descripcion,
-                        String ubicacion);
+                        String ubicacion,
+                        String categoria);
 
         void actualizarHorarioEntrenamiento(
                         Long horarioId,
+                        Long grupoId,
                         String dia,
                         String horaInicio,
                         String horaFin,
                         String descripcion,
-                        String ubicacion);
+                        String ubicacion,
+                        String categoria);
 
         void eliminarHorarioEntrenamiento(Long horarioId);
 
