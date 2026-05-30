@@ -103,4 +103,11 @@ public interface ClubRepositoryCustom {
 
         void insertGrupoEntrenador(Long grupoId, Long entrenadorId);
 
+        // Invitaciones
+        Long crearInvitacion(Long clubId, Long usuarioId, String rol);
+
+        List<Object[]> getInvitacionesByClubId(Long clubId);
+        
+        Long buscarUsuarioPorEmail(String email);
+
 }

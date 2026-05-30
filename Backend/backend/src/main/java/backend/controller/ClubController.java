@@ -308,6 +308,54 @@ public class ClubController {
         }
     }
 
+    @PutMapping("/deportistas/{id}/grupo")
+    public ResponseEntity<?> assignDeportistaToGroup(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            String grupoIdRaw = body.get("grupoId") != null ? body.get("grupoId").toString() : null;
+            Long grupoId = (grupoIdRaw == null || grupoIdRaw.isBlank())
+                    ? null
+                    : Long.valueOf(grupoIdRaw);
+
+            clubService.assignDeportistaToGroup(id, grupoId, email);
+            return ResponseEntity.ok(Map.of("message", "Grupo actualizado para el deportista"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/deportistas/{id}/categoria")
+    public ResponseEntity<?> assignDeportistaToCategory(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body("No autorizado");
+            }
+
+            String categoriaIdRaw = body.get("categoriaId") != null ? body.get("categoriaId").toString() : null;
+            Long categoriaId = (categoriaIdRaw == null || categoriaIdRaw.isBlank())
+                    ? null
+                    : Long.valueOf(categoriaIdRaw);
+
+            clubService.assignDeportistaToCategory(id, categoriaId, email);
+            return ResponseEntity.ok(Map.of("message", "Categoría actualizada para el deportista"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/entrenadores/{id}")
     public ResponseEntity<?> eliminarEntrenador(
             @PathVariable Long id,
@@ -734,6 +782,51 @@ public class ClubController {
             }
             clubService.deleteGroup(id, email);
             return ResponseEntity.ok(Map.of("message", "Grupo eliminado"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/invitaciones")
+    public ResponseEntity<?> crearInvitacion(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) return ResponseEntity.status(401).body("No autorizado");
+
+            String emailInvitado = body.get("email");
+            String rol = body.get("rol");
+
+            if (emailInvitado == null || rol == null) {
+                return ResponseEntity.badRequest().body("Email y rol son requeridos");
+            }
+
+            Long id = clubService.crearInvitacion(email, emailInvitado, rol);
+            return ResponseEntity.ok(Map.of("id", id));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/invitaciones")
+    public ResponseEntity<?> getInvitacionesClub(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) return ResponseEntity.status(401).body("No autorizado");
+            return ResponseEntity.ok(clubService.getInvitacionesClub(email));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/invitaciones/slug/{slug}")
+    public ResponseEntity<?> getInvitacionesBySlug(@PathVariable String slug) {
+        try {
+            return ResponseEntity.ok(clubService.getInvitacionesBySlug(slug));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

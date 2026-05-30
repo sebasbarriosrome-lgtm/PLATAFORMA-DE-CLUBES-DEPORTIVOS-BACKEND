@@ -494,4 +494,42 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                 .executeUpdate();
         }
 
+        @Override
+        public Long crearInvitacion(Long clubId, Long usuarioId, String rol) {
+        entityManager.createNativeQuery(
+                "INSERT INTO invitacion (club_id, usuario_id, rol, estado, created_at) " +
+                "VALUES (?, ?, ?, 'pendiente', CURRENT_TIMESTAMP)")
+                .setParameter(1, clubId)
+                .setParameter(2, usuarioId)
+                .setParameter(3, rol)
+                .executeUpdate();
+
+        return ((Number) entityManager
+                .createNativeQuery("SELECT LAST_INSERT_ID()")
+                .getSingleResult()).longValue();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getInvitacionesByClubId(Long clubId) {
+        return (List<Object[]>) entityManager.createNativeQuery(
+                "SELECT i.id, u.nombre, u.apellido, u.email, i.rol, i.estado, i.created_at " +
+                "FROM invitacion i " +
+                "JOIN usuario u ON u.id = i.usuario_id " +
+                "WHERE i.club_id = ? " +
+                "ORDER BY i.created_at DESC")
+                .setParameter(1, clubId)
+                .getResultList();
+        }
+
+        @Override
+        public Long buscarUsuarioPorEmail(String email) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = entityManager.createNativeQuery(
+                "SELECT id FROM usuario WHERE email = ? AND deleted_at IS NULL LIMIT 1")
+                .setParameter(1, email)
+                .getResultList();
+        return results.isEmpty() ? null : ((Number) results.get(0)).longValue();
+        }
+
 }

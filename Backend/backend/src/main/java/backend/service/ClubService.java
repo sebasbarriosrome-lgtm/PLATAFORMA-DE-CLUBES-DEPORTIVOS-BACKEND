@@ -474,6 +474,82 @@ public class ClubService {
     }
 
     @Transactional
+    public void assignDeportistaToGroup(Long deportistaId, Long grupoId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        @SuppressWarnings("unchecked")
+        List<Object> deportistaRows = entityManager.createNativeQuery(
+                "SELECT uc.club_id FROM deportista d JOIN usuario_club uc ON uc.id = d.usuario_club_id WHERE d.id = ? AND d.deleted_at IS NULL")
+                .setParameter(1, deportistaId)
+                .getResultList();
+
+        if (deportistaRows.isEmpty()) {
+            throw new RuntimeException("Deportista no encontrado");
+        }
+
+        Long deportistaClubId = ((Number) deportistaRows.get(0)).longValue();
+        if (!clubId.equals(deportistaClubId)) {
+            throw new RuntimeException("El deportista no pertenece a tu club");
+        }
+
+        if (grupoId != null) {
+            Long validGroupCount = ((Number) entityManager.createNativeQuery(
+                    "SELECT COUNT(*) FROM grupo_deportivo WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                    .setParameter(1, grupoId)
+                    .setParameter(2, clubId)
+                    .getSingleResult()).longValue();
+
+            if (validGroupCount == 0) {
+                throw new RuntimeException("Grupo no válido para tu club");
+            }
+        }
+
+        entityManager.createNativeQuery(
+                "UPDATE deportista SET grupo_id = ? WHERE id = ? AND deleted_at IS NULL")
+                .setParameter(1, grupoId)
+                .setParameter(2, deportistaId)
+                .executeUpdate();
+    }
+
+    @Transactional
+    public void assignDeportistaToCategory(Long deportistaId, Long categoriaId, String email) {
+        Long clubId = obtenerClubIdDelAdmin(email);
+
+        @SuppressWarnings("unchecked")
+        List<Object> deportistaRows = entityManager.createNativeQuery(
+                "SELECT uc.club_id FROM deportista d JOIN usuario_club uc ON uc.id = d.usuario_club_id WHERE d.id = ? AND d.deleted_at IS NULL")
+                .setParameter(1, deportistaId)
+                .getResultList();
+
+        if (deportistaRows.isEmpty()) {
+            throw new RuntimeException("Deportista no encontrado");
+        }
+
+        Long deportistaClubId = ((Number) deportistaRows.get(0)).longValue();
+        if (!clubId.equals(deportistaClubId)) {
+            throw new RuntimeException("El deportista no pertenece a tu club");
+        }
+
+        if (categoriaId != null) {
+            Long validCategoryCount = ((Number) entityManager.createNativeQuery(
+                    "SELECT COUNT(*) FROM categoria WHERE id = ? AND club_id = ? AND deleted_at IS NULL")
+                    .setParameter(1, categoriaId)
+                    .setParameter(2, clubId)
+                    .getSingleResult()).longValue();
+
+            if (validCategoryCount == 0) {
+                throw new RuntimeException("Categoría no válida para tu club");
+            }
+        }
+
+        entityManager.createNativeQuery(
+                "UPDATE deportista SET categoria_id = ? WHERE id = ? AND deleted_at IS NULL")
+                .setParameter(1, categoriaId)
+                .setParameter(2, deportistaId)
+                .executeUpdate();
+    }
+
+    @Transactional
     public void eliminarDeportista(Long deportistaId, String email) {
         Long clubId = obtenerClubIdDelAdmin(email);
 
@@ -1004,5 +1080,69 @@ public class ClubService {
     public Club getClubById(Long id) {
         return clubRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Club no encontrado"));
+    }
+
+    @Transactional
+public Long crearInvitacion(String emailAdmin, String emailInvitado, String rol) {
+    Long clubId = obtenerClubIdDelAdmin(emailAdmin);
+
+    Long usuarioId = clubRepository.buscarUsuarioPorEmail(emailInvitado);
+    if (usuarioId == null) {
+        throw new RuntimeException("Usuario no encontrado con ese email");
+    }
+
+    // Verificar que no esté ya en el club
+    Long yaEnClub = ((Number) entityManager.createNativeQuery(
+        "SELECT COUNT(*) FROM usuario_club WHERE usuario_id = ? AND club_id = ?")
+        .setParameter(1, usuarioId)
+        .setParameter(2, clubId)
+        .getSingleResult()).longValue();
+
+    if (yaEnClub > 0) {
+        throw new RuntimeException("El usuario ya pertenece al club");
+    }
+
+    return clubRepository.crearInvitacion(clubId, usuarioId, rol);
+}
+
+public List<Map<String, Object>> getInvitacionesClub(String email) {
+    Long clubId = obtenerClubIdDelAdmin(email);
+    List<Object[]> rows = clubRepository.getInvitacionesByClubId(clubId);
+
+    List<Map<String, Object>> response = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("id",        row[0]);
+        item.put("nombre",    row[1]);
+        item.put("apellido",  row[2]);
+        item.put("email",     row[3]);
+        item.put("rol",       row[4]);
+        item.put("estado",    row[5]);
+        item.put("createdAt", row[6]);
+        response.add(item);
+    }
+    return response;
+}
+
+    // Para VistaClub (público, sin auth)
+    public List<Map<String, Object>> getInvitacionesBySlug(String slug) {
+        Club club = clubRepository.findBySlug(slug)
+            .orElseThrow(() -> new RuntimeException("Club no encontrado"));
+
+        List<Object[]> rows = clubRepository.getInvitacionesByClubId(club.getId());
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (Object[] row : rows) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id",        row[0]);
+            item.put("nombre",    row[1]);
+            item.put("apellido",  row[2]);
+            item.put("email",     row[3]);
+            item.put("rol",       row[4]);
+            item.put("estado",    row[5]);
+            item.put("createdAt", row[6]);
+            response.add(item);
+        }
+        return response;
     }
 }
