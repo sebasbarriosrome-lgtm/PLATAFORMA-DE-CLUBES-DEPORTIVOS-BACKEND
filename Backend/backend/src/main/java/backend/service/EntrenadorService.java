@@ -119,8 +119,29 @@ public class EntrenadorService {
             gruposResponse.add(grupoMap);
         }
 
+        List<Object[]> categorias = entityManager
+                .createNativeQuery(
+                        "SELECT DISTINCT c.id, c.nombre, c.descripcion " +
+                                "FROM categoria c " +
+                                "JOIN entrenador_categoria ec ON ec.categoria_id = c.id " +
+                                "JOIN entrenador e ON ec.entrenador_id = e.id " +
+                                "JOIN usuario_club uc ON uc.id = e.usuario_club_id " +
+                                "WHERE uc.usuario_id = ?")
+                .setParameter(1, usuarioId)
+                .getResultList();
+
+        List<Map<String, Object>> categoriasResponse = new ArrayList<>();
+        for (Object[] c : categorias) {
+            Map<String, Object> categoriaMap = new HashMap<>();
+            categoriaMap.put("id", ((Number) c[0]).longValue());
+            categoriaMap.put("nombre", c[1]);
+            categoriaMap.put("descripcion", c[2]);
+            categoriasResponse.add(categoriaMap);
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("grupos", gruposResponse);
+        response.put("categorias", categoriasResponse);
         response.put("coachEmail", email);
 
         return response;

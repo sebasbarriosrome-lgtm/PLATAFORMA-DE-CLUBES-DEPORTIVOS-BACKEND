@@ -289,11 +289,13 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
         @Override
         public void eliminarHorarioEntrenamiento(Long horarioId) {
 
-                entityManager
-                                .createNativeQuery(
-                                                "UPDATE horario_entrenamiento SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-                                .setParameter(1, horarioId)
-                                .executeUpdate();
+        entityManager
+                .createNativeQuery(
+                            "UPDATE horario_entrenamiento " +
+                            "SET deleted_at = CURRENT_TIMESTAMP " +
+                            "WHERE id = ?")
+            .setParameter(1, horarioId)
+            .executeUpdate();
         }
 
         @Override
@@ -301,38 +303,57 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
         public List<Object[]> getHorariosByClubSlug(String slug) {
 
                 return (List<Object[]>) entityManager
-                                .createNativeQuery(
-                                                "SELECT he.id, he.dia_semana, TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, "
-                                                                +
-                                                                "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, he.descripcion, he.ubicacion, he.activo, he.grupo_id, he.categoria "
-                                                                +
-                                                                "FROM horario_entrenamiento he " +
-                                                                "INNER JOIN grupo_deportivo g ON g.id = he.grupo_id " +
-                                                                "INNER JOIN club c ON c.id = g.club_id " +
-                                                                "WHERE c.slug = ? AND he.activo = TRUE AND he.deleted_at IS NULL "
-                                                                +
-                                                                "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio")
-                                .setParameter(1, slug)
-                                .getResultList();
+                        .createNativeQuery(
+                                "SELECT " +
+                                            "he.id, " +
+                                            "he.dia_semana, " +
+                                            "TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, " +
+                                            "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, " +
+                                            "he.descripcion, " +
+                                            "he.ubicacion, " +
+                                            "he.activo, " +
+                                            "he.grupo_id, " +
+                                            "he.categoria, " +
+                                            "g.nombre AS grupo_nombre " +
+                                            "FROM horario_entrenamiento he " +
+                                            "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +
+                                            "LEFT JOIN club c ON c.id = g.club_id " +
+                                            "WHERE c.slug = ? " +
+                                            "AND he.activo = TRUE " +
+                                            "AND he.deleted_at IS NULL " +
+                                            "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio"
+                        )
+                            .setParameter(1, slug)
+                            .getResultList();
         }
+
 
         @Override
         @SuppressWarnings("unchecked")
         public List<Object[]> getHorariosByClubId(Long clubId) {
 
-                return (List<Object[]>) entityManager
-                                .createNativeQuery(
-                                                "SELECT he.id, he.dia_semana, TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, "
-                                                                +
-                                                                "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, he.descripcion, he.ubicacion, he.activo, he.grupo_id, he.categoria "
-                                                                +
-                                                                "FROM horario_entrenamiento he " +
-                                                                "INNER JOIN grupo_deportivo g ON g.id = he.grupo_id " +
-                                                                "WHERE g.club_id = ? AND he.activo = TRUE AND he.deleted_at IS NULL "
-                                                                +
-                                                                "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio")
-                                .setParameter(1, clubId)
-                                .getResultList();
+        return (List<Object[]>) entityManager
+                    .createNativeQuery(
+                            "SELECT " +
+                                "he.id, " +
+                                "he.dia_semana, " +
+                                "TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, " +
+                                "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, " +
+                                "he.descripcion, " +
+                                "he.ubicacion, " +
+                                "he.activo, " +
+                                "he.grupo_id, " +
+                                "he.categoria, " +
+                                "g.nombre AS grupo_nombre " +   // ✅ NUEVO
+                                "FROM horario_entrenamiento he " +
+                                "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +  // ✅ CAMBIO
+                                "WHERE (g.club_id = ? OR he.categoria IS NOT NULL) " +   // ✅ FIX
+                                "AND he.activo = TRUE " +
+                                "AND he.deleted_at IS NULL " +
+                                "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio"
+                )
+                .setParameter(1, clubId)
+                .getResultList();
         }
 
         @Override

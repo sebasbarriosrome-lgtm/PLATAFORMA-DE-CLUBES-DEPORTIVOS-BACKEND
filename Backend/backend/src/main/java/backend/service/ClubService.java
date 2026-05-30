@@ -910,44 +910,69 @@ public class ClubService {
         var usuario = usuarioRepository.buscarPorEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Email: " + email + ", UsuarioId: " + usuario.getId());
+        System.out.println("🔍 UsuarioId: " + usuario.getId());
+
+        // ── DEBUG: ver todos los registros de usuario_club para este usuario ──
+        @SuppressWarnings("unchecked")
+        List<Object[]> raw = entityManager.createNativeQuery(
+                "SELECT uc.id, uc.club_id, uc.rol, uc.estado, e.id as entrenador_id " +
+                "FROM usuario_club uc " +
+                "LEFT JOIN entrenador e ON e.usuario_club_id = uc.id " +
+                "WHERE uc.usuario_id = ?")
+                .setParameter(1, usuario.getId())
+                .getResultList();
+
+        if (raw.isEmpty()) {
+            System.out.println("🔍 DEBUG - usuario_club VACÍO para userId=" + usuario.getId());
+        } else {
+            raw.forEach(r -> System.out.println(
+                "🔍 DEBUG - uc.id=" + r[0] +
+                " club_id=" + r[1] +
+                " rol=" + r[2] +
+                " estado=" + r[3] +
+                " entrenador_id=" + r[4]
+            ));
+        }
+        // ── FIN DEBUG ──
 
         Map<String, Object> panel = (Map<String, Object>) clubRepository.getPanelClubData(usuario.getId());
 
         if (panel != null && panel.get("id") != null) {
             Long clubId = ((Number) panel.get("id")).longValue();
-            System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Es admin, ClubId: " + clubId);
+            System.out.println("🔍 Es admin, ClubId: " + clubId);
             return clubId;
         }
 
-        // Si no es admin, intentar resolver el club a partir de su rol de entrenador
+        System.out.println("🔍 No es admin, buscando como entrenador...");
+
         @SuppressWarnings("unchecked")
         List<Object> trainerClubResults = entityManager.createNativeQuery(
                 "SELECT uc.club_id " +
-                        "FROM usuario_club uc " +
-                        "JOIN entrenador e ON e.usuario_club_id = uc.id " +
-                        "WHERE uc.usuario_id = ? " +
-                        "AND uc.rol = 'entrenador' " +
-                        "LIMIT 1")
+                "FROM usuario_club uc " +
+                "JOIN entrenador e ON e.usuario_club_id = uc.id " +
+                "WHERE uc.usuario_id = ? " +
+                "AND uc.rol = 'entrenador' " +
+                "LIMIT 1")
                 .setParameter(1, usuario.getId())
                 .getResultList();
 
         if (trainerClubResults.isEmpty()) {
-            System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - ERROR: No es admin y no es entrenador de ningún club");
+            System.out.println("🔍 ERROR: No es admin y no es entrenador de ningún club");
             throw new RuntimeException("No tiene club asociado");
         }
 
         Long clubId = ((Number) trainerClubResults.get(0)).longValue();
-        System.out.println("🔍 DEBUG obtenerClubIdDelAdmin - Es entrenador, ClubId: " + clubId);
+        System.out.println("🔍 Es entrenador, ClubId: " + clubId);
         return clubId;
     }
 
     private List<Map<String, Object>> mapHorarios(List<Object[]> results) {
 
-        List<Map<String, Object>> response = new ArrayList<>();
+    List<Map<String, Object>> response = new ArrayList<>();
 
         for (Object[] row : results) {
             Map<String, Object> item = new HashMap<>();
+
             item.put("id", row[0]);
             item.put("dia", row[1]);
             item.put("horaInicio", row[2]);
@@ -955,22 +980,22 @@ public class ClubService {
             item.put("descripcion", row[4]);
             item.put("ubicacion", row[5]);
             item.put("estado", row[6]);
-            // nuevo: grupoId y categoria (si la consulta los retorna en posiciones 7 y 8)
-            if (row.length > 7) {
-                item.put("grupoId", row[7] == null ? null : ((Number) row[7]).longValue());
-            } else {
-                item.put("grupoId", null);
-            }
-            if (row.length > 8) {
-                item.put("categoria", row[8]);
-            } else {
-                item.put("categoria", null);
-            }
+
+            // ✅ grupoId
+            item.put("grupoId", row[7] == null ? null : ((Number) row[7]).longValue());
+
+            // ✅ categoria
+            item.put("categoria", row[8]);
+
+            // ✅ NUEVO → nombre del grupo
+            item.put("grupoNombre", row[9]);
+
             response.add(item);
         }
 
         return response;
     }
+
 
     public Club getClubById(Long id) {
         return clubRepository.findById(id)
