@@ -390,7 +390,7 @@ public class ClubController {
             String descripcion = body.get("descripcion");
             // nuevo: destinatario
             Long grupoId = body.get("grupoId") != null ? Long.valueOf(body.get("grupoId")) : null;
-            String categoria = body.get("categoria");
+            Long categoriaId = body.get("categoriaId") != null ? Long.valueOf(body.get("categoriaId")) : null;
 
             if (dia == null || horaInicio == null || horaFin == null) {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
@@ -412,7 +412,7 @@ public class ClubController {
                     descripcion,
                     ubicacion,
                     grupoId,
-                    categoria);
+                    categoriaId);
 
             return ResponseEntity.ok(Map.of("id", horarioId));
         } catch (Exception e) {
@@ -441,7 +441,7 @@ public class ClubController {
             String ubicacion = body.get("ubicacion");
             String descripcion = body.get("descripcion");
             Long grupoId = body.get("grupoId") != null ? Long.valueOf(body.get("grupoId")) : null;
-            String categoria = body.get("categoria");
+            Long categoriaId = body.get("categoriaId") != null ? Long.valueOf(body.get("categoriaId")) : null;
 
             if (dia == null || horaInicio == null || horaFin == null) {
                 return ResponseEntity.badRequest().body("Datos de horario incompletos");
@@ -464,7 +464,7 @@ public class ClubController {
                     descripcion,
                     ubicacion,
                     grupoId,
-                    categoria);
+                    categoriaId);
 
             return ResponseEntity.ok("Horario actualizado");
         } catch (Exception e) {

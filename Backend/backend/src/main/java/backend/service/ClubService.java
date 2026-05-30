@@ -520,7 +520,9 @@ public class ClubService {
 
     public List<Map<String, Object>> getHorariosClubBySlug(String slug) {
 
-        List<Object[]> results = clubRepository.getHorariosByClubSlug(slug);
+        Club club = clubRepository.findBySlug(slug)
+                .orElseThrow(() -> new RuntimeException("Club no encontrado"));
+        List<Object[]> results = clubRepository.getHorariosByClubId(club.getId());
         return mapHorarios(results);
     }
 
@@ -533,7 +535,7 @@ public class ClubService {
             String descripcion,
             String ubicacion,
             Long grupoId,
-            String categoria) {
+            Long categoriaId) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
@@ -545,7 +547,7 @@ public class ClubService {
                 horaFin,
                 descripcion,
                 ubicacion,
-                categoria);
+                categoriaId);
     }
 
     @Transactional
@@ -558,7 +560,7 @@ public class ClubService {
             String descripcion,
             String ubicacion,
             Long grupoId,
-            String categoria) {
+            Long categoriaId) {
 
         Long clubId = obtenerClubIdDelAdmin(email);
 
@@ -581,7 +583,7 @@ public class ClubService {
                 horaFin,
                 descripcion,
                 ubicacion,
-                categoria);
+                categoriaId);
     }
 
     @Transactional
@@ -985,10 +987,12 @@ public class ClubService {
             item.put("grupoId", row[7] == null ? null : ((Number) row[7]).longValue());
 
             // ✅ categoria
-            item.put("categoria", row[8]);
+            item.put("categoriaId", row[8] == null ? null : ((Number) row[8]).longValue());
 
             // ✅ NUEVO → nombre del grupo
             item.put("grupoNombre", row[9]);
+
+            item.put("categoriaNombre", row[10]);
 
             response.add(item);
         }

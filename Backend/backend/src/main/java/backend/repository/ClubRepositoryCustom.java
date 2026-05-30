@@ -55,7 +55,7 @@ public interface ClubRepositoryCustom {
                         String horaFin,
                         String descripcion,
                         String ubicacion,
-                        String categoria);
+                        Long categoriaId);
 
         void actualizarHorarioEntrenamiento(
                         Long horarioId,
@@ -65,7 +65,7 @@ public interface ClubRepositoryCustom {
                         String horaFin,
                         String descripcion,
                         String ubicacion,
-                        String categoria);
+                        Long categoriaId);
 
         void eliminarHorarioEntrenamiento(Long horarioId);
 

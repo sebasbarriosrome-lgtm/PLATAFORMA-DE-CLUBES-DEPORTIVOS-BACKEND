@@ -202,12 +202,12 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                         String horaFin,
                         String descripcion,
                         String ubicacion,
-                        String categoria) {
+                        Long categoriaId) {
 
                 if (grupoId != null) {
                         entityManager
                                         .createNativeQuery(
-                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria, activo, created_at) "
+                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria_id, activo, created_at) "
                                                                         +
                                                                         "VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)")
                                         .setParameter(1, grupoId)
@@ -216,12 +216,12 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                         .setParameter(4, horaFin)
                                         .setParameter(5, descripcion)
                                         .setParameter(6, ubicacion)
-                                        .setParameter(7, categoria)
+                                        .setParameter(7, categoriaId)
                                         .executeUpdate();
                 } else {
                         entityManager
                                         .createNativeQuery(
-                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria, activo, created_at) "
+                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria_id, activo, created_at) "
                                                                         +
                                                                         "VALUES ((SELECT id FROM grupo_deportivo WHERE club_id = ? ORDER BY id LIMIT 1), ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)")
                                         .setParameter(1, clubId)
@@ -230,7 +230,7 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                         .setParameter(4, horaFin)
                                         .setParameter(5, descripcion)
                                         .setParameter(6, ubicacion)
-                                        .setParameter(7, categoria)
+                                        .setParameter(7, categoriaId)
                                         .executeUpdate();
                 }
 
@@ -250,13 +250,13 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                         String horaFin,
                         String descripcion,
                         String ubicacion,
-                        String categoria) {
+                        Long categoriaId) {
 
                 if (grupoId != null) {
                         entityManager
                                         .createNativeQuery(
                                                         "UPDATE horario_entrenamiento " +
-                                                                        "SET grupo_id = ?, dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria = ? "
+                                                                        "SET grupo_id = ?, dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria_id = ? "
                                                                         +
                                                                         "WHERE id = ?")
                                         .setParameter(1, grupoId)
@@ -265,14 +265,14 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                         .setParameter(4, horaFin)
                                         .setParameter(5, descripcion)
                                         .setParameter(6, ubicacion)
-                                        .setParameter(7, categoria)
+                                        .setParameter(7, categoriaId)
                                         .setParameter(8, horarioId)
                                         .executeUpdate();
                 } else {
                         entityManager
                                         .createNativeQuery(
                                                         "UPDATE horario_entrenamiento " +
-                                                                        "SET dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria = ? "
+                                                                        "SET dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria_id = ? "
                                                                         +
                                                                         "WHERE id = ?")
                                         .setParameter(1, dia)
@@ -280,7 +280,7 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                         .setParameter(3, horaFin)
                                         .setParameter(4, descripcion)
                                         .setParameter(5, ubicacion)
-                                        .setParameter(6, categoria)
+                                        .setParameter(6, categoriaId)
                                         .setParameter(7, horarioId)
                                         .executeUpdate();
                 }
@@ -313,11 +313,13 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                             "he.ubicacion, " +
                                             "he.activo, " +
                                             "he.grupo_id, " +
-                                            "he.categoria, " +
-                                            "g.nombre AS grupo_nombre " +
+                                            "he.categoria_id, " +
+                                            "g.nombre AS grupo_nombre, " +
+                                            "cat.nombre AS categoria_nombre, " +
                                             "FROM horario_entrenamiento he " +
                                             "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +
-                                            "LEFT JOIN club c ON c.id = g.club_id " +
+                                            "LEFT JOIN categoria cat ON cat.id = he.categoria_id " +
+                                            "JOIN club c ON (c.id = g.club_id OR c.id = cat.club_id) " +
                                             "WHERE c.slug = ? " +
                                             "AND he.activo = TRUE " +
                                             "AND he.deleted_at IS NULL " +
@@ -343,11 +345,13 @@ public class ClubRepositoryImpl implements ClubRepositoryCustom {
                                 "he.ubicacion, " +
                                 "he.activo, " +
                                 "he.grupo_id, " +
-                                "he.categoria, " +
-                                "g.nombre AS grupo_nombre " +   // ✅ NUEVO
+                                "he.categoria_id, " +
+                                "g.nombre AS grupo_nombre, " +   // ✅ NUEVO
+                                "cat.nombre AS categoria_nombre " +   // ✅ NUEVO
                                 "FROM horario_entrenamiento he " +
                                 "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +  // ✅ CAMBIO
-                                "WHERE (g.club_id = ? OR he.categoria IS NOT NULL) " +   // ✅ FIX
+                                "LEFT JOIN categoria cat ON cat.id = he.categoria_id " +  // ✅ CAMBIO
+                                "WHERE (g.club_id = ? OR he.categoria_id IS NOT NULL) " +   // ✅ FIX
                                 "AND he.activo = TRUE " +
                                 "AND he.deleted_at IS NULL " +
                                 "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio"
