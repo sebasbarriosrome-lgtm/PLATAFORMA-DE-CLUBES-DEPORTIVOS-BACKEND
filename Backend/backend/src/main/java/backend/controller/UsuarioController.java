@@ -261,4 +261,53 @@ public class UsuarioController {
         }
     }
 
+    @GetMapping("/invitaciones")
+    public ResponseEntity<?> obtenerInvitaciones(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body(Map.of("message", "No autorizado"));
+            }
+            return ResponseEntity.ok(usuarioService.obtenerInvitaciones(email));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Error al obtener invitaciones"));
+        }
+    }
+
+    @PutMapping("/invitaciones/{id}")
+    public ResponseEntity<?> resolverInvitacion(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) {
+                return ResponseEntity.status(401).body(Map.of("message", "No autorizado"));
+            }
+
+            String accion = body.get("accion") != null ? body.get("accion").toString() : null;
+            if (accion == null || (!accion.equals("aceptado") && !accion.equals("rechazado"))) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Acción inválida"));
+            }
+
+            Double peso = body.get("peso") != null ? Double.valueOf(body.get("peso").toString()) : null;
+            Long estatura = body.get("estatura") != null ? Long.valueOf(body.get("estatura").toString()) : null;
+            String experiencia = body.get("experiencia") != null ? body.get("experiencia").toString() : null;
+            String especialidad = body.get("especialidad") != null ? body.get("especialidad").toString() : null;
+
+            usuarioService.resolverInvitacion(email, id, accion, peso, estatura, experiencia, especialidad);
+            return ResponseEntity.ok(Map.of("message", "Invitación actualizada"));
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Error al actualizar invitación"));
+        }
+    }
+
 }
