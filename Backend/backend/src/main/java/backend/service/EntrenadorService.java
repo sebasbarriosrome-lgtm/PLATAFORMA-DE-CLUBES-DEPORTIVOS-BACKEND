@@ -459,4 +459,273 @@ public class EntrenadorService {
                     .executeUpdate();
         }
     }
+
+    // ─────────────────────────────────────────────
+// MÉTRICAS
+// ─────────────────────────────────────────────
+
+public List<Map<String, Object>> getMetricasBySesion(Long sesionId) {
+    List<Object[]> rows = entityManager
+            .createNativeQuery(
+                    "SELECT ms.id, ms.deportista_id, " +
+                    "u.nombre, u.apellido, " +
+                    "a.nombre AS actividad_nombre, " +
+                    "ms.tiempo, ms.distancia, ms.velocidad, " +
+                    "ms.tecnica, ms.rendimiento_fisico, ms.observaciones, " +
+                    "ms.sesion_actividad_id, ms.created_at " +
+                    "FROM metricas_sesion ms " +
+                    "JOIN deportista d ON d.id = ms.deportista_id " +
+                    "JOIN usuario_club uc ON uc.id = d.usuario_club_id " +
+                    "JOIN usuario u ON u.id = uc.usuario_id " +
+                    "JOIN sesion_actividad sa ON sa.id = ms.sesion_actividad_id " +
+                    "JOIN actividad a ON a.id = sa.actividad_id " +
+                    "WHERE ms.sesion_id = ? AND ms.deleted_at IS NULL " +
+                    "ORDER BY ms.created_at DESC")
+            .setParameter(1, sesionId)
+            .getResultList();
+
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id",               ((Number) row[0]).longValue());
+        m.put("deportistaId",     ((Number) row[1]).longValue());
+        m.put("deportistaNombre", row[2] + " " + row[3]);
+        m.put("actividadNombre",  row[4]);
+        m.put("tiempo",           row[5]);
+        m.put("distancia",        row[6]);
+        m.put("velocidad",        row[7]);
+        m.put("tecnica",          row[8]);
+        m.put("rendimientoFisico",row[9]);
+        m.put("observaciones",    row[10]);
+        m.put("sesionActividadId",row[11] != null ? ((Number) row[11]).longValue() : null);
+        m.put("createdAt",        row[12] != null ? row[12].toString() : null);
+        result.add(m);
+    }
+    return result;
+}
+
+public List<Map<String, Object>> getMetricasByDeportista(Long deportistaId) {
+    List<Object[]> rows = entityManager
+            .createNativeQuery(
+                    "SELECT ms.id, s.fecha, g.nombre AS grupo_nombre, " +
+                    "a.nombre AS actividad_nombre, " +
+                    "ms.tiempo, ms.distancia, ms.velocidad, " +
+                    "ms.tecnica, ms.rendimiento_fisico, ms.observaciones " +
+                    "FROM metricas_sesion ms " +
+                    "JOIN sesion_entrenamiento s ON s.id = ms.sesion_id " +
+                    "JOIN grupo_deportivo g ON g.id = s.grupo_id " +
+                    "JOIN sesion_actividad sa ON sa.id = ms.sesion_actividad_id " +
+                    "JOIN actividad a ON a.id = sa.actividad_id " +
+                    "WHERE ms.deportista_id = ? AND ms.deleted_at IS NULL " +
+                    "ORDER BY s.fecha DESC, ms.created_at DESC")
+            .setParameter(1, deportistaId)
+            .getResultList();
+
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id",               ((Number) row[0]).longValue());
+        m.put("fecha",            row[1] != null ? row[1].toString() : null);
+        m.put("grupoNombre",      row[2]);
+        m.put("actividadNombre",  row[3]);
+        m.put("tiempo",           row[4]);
+        m.put("distancia",        row[5]);
+        m.put("velocidad",        row[6]);
+        m.put("tecnica",          row[7]);
+        m.put("rendimientoFisico",row[8]);
+        m.put("observaciones",    row[9]);
+        result.add(m);
+    }
+    return result;
+}
+
+@Transactional
+public Map<String, Object> registrarMetrica(String email, Long sesionId, Map<String, Object> body) {
+    Long entrenadorId    = getEntrenadorId(email);
+    Long deportistaId    = Long.valueOf(body.get("deportistaId").toString());
+    Long sesionActividadId = Long.valueOf(body.get("sesionActividadId").toString());
+
+    Object tiempoRaw     = body.get("tiempo");
+    Object distanciaRaw  = body.get("distancia");
+    Object velocidadRaw  = body.get("velocidad");
+    Object tecnicaRaw    = body.get("tecnica");
+    Object rendimientoRaw= body.get("rendimientoFisico");
+    String observaciones = body.getOrDefault("observaciones", "").toString();
+
+    Double tiempo     = tiempoRaw    != null && !tiempoRaw.toString().isEmpty()
+                        ? Double.valueOf(tiempoRaw.toString()) : null;
+    Double distancia  = distanciaRaw != null && !distanciaRaw.toString().isEmpty()
+                        ? Double.valueOf(distanciaRaw.toString()) : null;
+    Double velocidad  = velocidadRaw != null && !velocidadRaw.toString().isEmpty()
+                        ? Double.valueOf(velocidadRaw.toString()) : null;
+    Integer tecnica   = tecnicaRaw   != null && !tecnicaRaw.toString().isEmpty()
+                        ? Integer.valueOf(tecnicaRaw.toString()) : null;
+    Integer rendimiento = rendimientoRaw != null && !rendimientoRaw.toString().isEmpty()
+                        ? Integer.valueOf(rendimientoRaw.toString()) : null;
+
+    entityManager.createNativeQuery(
+            "INSERT INTO metricas_sesion " +
+            "(deportista_id, entrenador_id, sesion_id, sesion_actividad_id, " +
+            "tiempo, distancia, velocidad, tecnica, rendimiento_fisico, observaciones, created_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)")
+            .setParameter(1, deportistaId)
+            .setParameter(2, entrenadorId)
+            .setParameter(3, sesionId)
+            .setParameter(4, sesionActividadId)
+            .setParameter(5, tiempo)
+            .setParameter(6, distancia)
+            .setParameter(7, velocidad)
+            .setParameter(8, tecnica)
+            .setParameter(9, rendimiento)
+            .setParameter(10, observaciones)
+            .executeUpdate();
+
+    List<?> idRows = entityManager
+            .createNativeQuery("SELECT LAST_INSERT_ID()")
+            .getResultList();
+    Long newId = idRows.isEmpty() ? null : ((Number) idRows.get(0)).longValue();
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("metricaId", newId);
+    result.put("message", "Métrica registrada correctamente");
+    return result;
+}
+
+@Transactional
+public Map<String, Object> eliminarMetrica(Long metricaId) {
+    entityManager
+            .createNativeQuery(
+                    "UPDATE metricas_sesion SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+            .setParameter(1, metricaId)
+            .executeUpdate();
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("message", "Métrica eliminada");
+    return result;
+}
+
+// ─────────────────────────────────────────────
+// RENDIMIENTO
+// ─────────────────────────────────────────────
+
+/** Gráfica 1: Evolución técnica + rendimiento físico por deportista (línea) */
+public List<Map<String, Object>> getEvolucionDeportista(Long deportistaId, Long actividadId) {
+    String sql =
+        "SELECT s.fecha, a.nombre AS actividad, " +
+        "AVG(ms.tecnica) AS tecnica, AVG(ms.rendimiento_fisico) AS rendimiento " +
+        "FROM metricas_sesion ms " +
+        "JOIN sesion_entrenamiento s ON s.id = ms.sesion_id " +
+        "JOIN sesion_actividad sa ON sa.id = ms.sesion_actividad_id " +
+        "JOIN actividad a ON a.id = sa.actividad_id " +
+        "WHERE ms.deportista_id = ? AND ms.deleted_at IS NULL " +
+        (actividadId != null ? "AND a.id = ? " : "") +
+        "GROUP BY s.fecha, a.nombre ORDER BY s.fecha ASC";
+
+    var q = entityManager.createNativeQuery(sql).setParameter(1, deportistaId);
+    if (actividadId != null) q.setParameter(2, actividadId);
+
+    List<Object[]> rows = q.getResultList();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("fecha",       row[0] != null ? row[0].toString() : null);
+        m.put("actividad",   row[1]);
+        m.put("tecnica",     row[2] != null ? ((Number) row[2]).doubleValue() : null);
+        m.put("rendimiento", row[3] != null ? ((Number) row[3]).doubleValue() : null);
+        result.add(m);
+    }
+    return result;
+}
+
+/** Gráfica 2: Comparación de deportistas en una sesión (barras) */
+public List<Map<String, Object>> getComparacionSesion(Long sesionId, Long actividadId) {
+    String sql =
+        "SELECT u.nombre, u.apellido, a.nombre AS actividad, " +
+        "AVG(ms.tecnica) AS tecnica, AVG(ms.rendimiento_fisico) AS rendimiento, " +
+        "AVG(ms.tiempo) AS tiempo, AVG(ms.distancia) AS distancia, AVG(ms.velocidad) AS velocidad " +
+        "FROM metricas_sesion ms " +
+        "JOIN deportista d ON d.id = ms.deportista_id " +
+        "JOIN usuario_club uc ON uc.id = d.usuario_club_id " +
+        "JOIN usuario u ON u.id = uc.usuario_id " +
+        "JOIN sesion_actividad sa ON sa.id = ms.sesion_actividad_id " +
+        "JOIN actividad a ON a.id = sa.actividad_id " +
+        "WHERE ms.sesion_id = ? AND ms.deleted_at IS NULL " +
+        (actividadId != null ? "AND a.id = ? " : "") +
+        "GROUP BY u.nombre, u.apellido, a.nombre " +
+        "ORDER BY u.apellido, u.nombre";
+
+    var q = entityManager.createNativeQuery(sql).setParameter(1, sesionId);
+    if (actividadId != null) q.setParameter(2, actividadId);
+
+    List<Object[]> rows = q.getResultList();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("deportista",  row[0] + " " + row[1]);
+        m.put("actividad",   row[2]);
+        m.put("tecnica",     row[3] != null ? ((Number) row[3]).doubleValue() : null);
+        m.put("rendimiento", row[4] != null ? ((Number) row[4]).doubleValue() : null);
+        m.put("tiempo",      row[5] != null ? ((Number) row[5]).doubleValue() : null);
+        m.put("distancia",   row[6] != null ? ((Number) row[6]).doubleValue() : null);
+        m.put("velocidad",   row[7] != null ? ((Number) row[7]).doubleValue() : null);
+        result.add(m);
+    }
+    return result;
+}
+
+/** Gráfica 3: Asistencia por deportista en el tiempo (barras) */
+public List<Map<String, Object>> getAsistenciaDeportistas(Long grupoId) {
+    String sql =
+        "SELECT u.nombre, u.apellido, " +
+        "SUM(CASE WHEN a.estado = 'presente' THEN 1 ELSE 0 END) AS presentes, " +
+        "SUM(CASE WHEN a.estado = 'ausente'  THEN 1 ELSE 0 END) AS ausentes, " +
+        "COUNT(a.id) AS total " +
+        "FROM deportista d " +
+        "JOIN usuario_club uc ON uc.id = d.usuario_club_id " +
+        "JOIN usuario u ON u.id = uc.usuario_id " +
+        "LEFT JOIN asistencia a ON a.deportista_id = d.id " +
+        "WHERE d.grupo_id = ? AND d.deleted_at IS NULL AND uc.estado = 'activo' " +
+        "GROUP BY u.nombre, u.apellido ORDER BY u.apellido, u.nombre";
+
+    List<Object[]> rows = entityManager.createNativeQuery(sql)
+            .setParameter(1, grupoId).getResultList();
+
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("deportista", row[0] + " " + row[1]);
+        m.put("presentes",  row[2] != null ? ((Number) row[2]).intValue() : 0);
+        m.put("ausentes",   row[3] != null ? ((Number) row[3]).intValue() : 0);
+        m.put("total",      row[4] != null ? ((Number) row[4]).intValue() : 0);
+        result.add(m);
+    }
+    return result;
+}
+
+/** Gráfica 4: Promedio de distancia / velocidad / tiempo por sesión de un grupo */
+public List<Map<String, Object>> getPromediosSesiones(Long grupoId) {
+    String sql =
+        "SELECT s.fecha, s.id AS sesion_id, " +
+        "AVG(ms.tiempo) AS tiempo, AVG(ms.distancia) AS distancia, AVG(ms.velocidad) AS velocidad " +
+        "FROM sesion_entrenamiento s " +
+        "LEFT JOIN metricas_sesion ms ON ms.sesion_id = s.id AND ms.deleted_at IS NULL " +
+        "WHERE s.grupo_id = ? AND s.deleted_at IS NULL " +
+        "GROUP BY s.id, s.fecha ORDER BY s.fecha ASC";
+
+    List<Object[]> rows = entityManager.createNativeQuery(sql)
+            .setParameter(1, grupoId).getResultList();
+
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Object[] row : rows) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("fecha",     row[0] != null ? row[0].toString() : null);
+        m.put("sesionId",  ((Number) row[1]).longValue());
+        m.put("tiempo",    row[2] != null ? ((Number) row[2]).doubleValue() : null);
+        m.put("distancia", row[3] != null ? ((Number) row[3]).doubleValue() : null);
+        m.put("velocidad", row[4] != null ? ((Number) row[4]).doubleValue() : null);
+        result.add(m);
+    }
+    return result;
+}
+
 }
