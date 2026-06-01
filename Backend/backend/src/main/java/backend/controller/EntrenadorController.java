@@ -188,99 +188,99 @@ public class EntrenadorController {
     }
 
     // ─────────────────────────────────────────────
-// MÉTRICAS
-// ─────────────────────────────────────────────
+    // MÉTRICAS
+    // ─────────────────────────────────────────────
 
-@GetMapping("/sesiones/{sesionId}/metricas")
-public ResponseEntity<?> getMetricasBySesion(@PathVariable Long sesionId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getMetricasBySesion(sesionId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/sesiones/{sesionId}/metricas")
+    public ResponseEntity<?> getMetricasBySesion(@PathVariable Long sesionId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getMetricasBySesion(sesionId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@GetMapping("/deportistas/{deportistaId}/metricas")
-public ResponseEntity<?> getMetricasByDeportista(@PathVariable Long deportistaId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getMetricasByDeportista(deportistaId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/deportistas/{deportistaId}/metricas")
+    public ResponseEntity<?> getMetricasByDeportista(@PathVariable Long deportistaId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getMetricasByDeportista(deportistaId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@PostMapping("/sesiones/{sesionId}/metricas")
-public ResponseEntity<?> registrarMetrica(HttpServletRequest request,
-                                           @PathVariable Long sesionId,
-                                           @RequestBody Map<String, Object> body) {
-    try {
-        String email = (String) request.getAttribute("email");
-        if (email == null) return ResponseEntity.status(401).body("No autorizado");
-        return ResponseEntity.ok(entrenadorService.registrarMetrica(email, sesionId, body));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @PostMapping("/sesiones/{sesionId}/metricas")
+    public ResponseEntity<?> registrarMetrica(HttpServletRequest request,
+                                            @PathVariable Long sesionId,
+                                            @RequestBody Map<String, Object> body) {
+        try {
+            String email = (String) request.getAttribute("email");
+            if (email == null) return ResponseEntity.status(401).body("No autorizado");
+            return ResponseEntity.ok(entrenadorService.registrarMetrica(email, sesionId, body));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@DeleteMapping("/metricas/{metricaId}")
-public ResponseEntity<?> eliminarMetrica(@PathVariable Long metricaId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.eliminarMetrica(metricaId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @DeleteMapping("/metricas/{metricaId}")
+    public ResponseEntity<?> eliminarMetrica(@PathVariable Long metricaId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.eliminarMetrica(metricaId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-// ─────────────────────────────────────────────
-// RENDIMIENTO
-// ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // RENDIMIENTO
+    // ─────────────────────────────────────────────
 
-@GetMapping("/rendimiento/evolucion/{deportistaId}")
-public ResponseEntity<?> getEvolucion(
-        @PathVariable Long deportistaId,
-        @RequestParam(required = false) Long actividadId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getEvolucionDeportista(deportistaId, actividadId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/rendimiento/evolucion/{deportistaId}")
+    public ResponseEntity<?> getEvolucion(
+            @PathVariable Long deportistaId,
+            @RequestParam(required = false) Long actividadId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getEvolucionDeportista(deportistaId, actividadId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@GetMapping("/rendimiento/comparacion/{sesionId}")
-public ResponseEntity<?> getComparacion(
-        @PathVariable Long sesionId,
-        @RequestParam(required = false) Long actividadId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getComparacionSesion(sesionId, actividadId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/rendimiento/comparacion/{sesionId}")
+    public ResponseEntity<?> getComparacion(
+            @PathVariable Long sesionId,
+            @RequestParam(required = false) Long actividadId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getComparacionSesion(sesionId, actividadId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@GetMapping("/rendimiento/asistencia/{grupoId}")
-public ResponseEntity<?> getAsistenciaGrupo(@PathVariable Long grupoId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getAsistenciaDeportistas(grupoId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/rendimiento/asistencia/{grupoId}")
+    public ResponseEntity<?> getAsistenciaGrupo(@PathVariable Long grupoId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getAsistenciaDeportistas(grupoId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
-@GetMapping("/rendimiento/promedios/{grupoId}")
-public ResponseEntity<?> getPromedios(@PathVariable Long grupoId) {
-    try {
-        return ResponseEntity.ok(entrenadorService.getPromediosSesiones(grupoId));
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @GetMapping("/rendimiento/promedios/{grupoId}")
+    public ResponseEntity<?> getPromedios(@PathVariable Long grupoId) {
+        try {
+            return ResponseEntity.ok(entrenadorService.getPromediosSesiones(grupoId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
-}
 
 }
