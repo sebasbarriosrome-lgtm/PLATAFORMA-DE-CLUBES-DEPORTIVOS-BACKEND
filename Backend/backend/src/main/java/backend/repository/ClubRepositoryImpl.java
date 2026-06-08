@@ -1,5 +1,535 @@
 package backend.repository;
 
-public class ClubRepositoryImpl {
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.ParameterMode;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.StoredProcedureQuery;
+import org.springframework.stereotype.Repository;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Repository
+public class ClubRepositoryImpl implements ClubRepositoryCustom {
+
+        @PersistenceContext
+        private EntityManager entityManager;
+
+        @Override
+        public void crearClub(
+                        String nombre,
+                        String ciudad,
+                        String descripcion,
+                        String logoUrl,
+                        String bannerUrl,
+                        String colorPrimario,
+                        String colorSecundario,
+                        String contacto) {
+
+                StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sp_create_club");
+
+                query.registerStoredProcedureParameter("p_nombre", String.class, jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_ciudad", String.class, jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_descripcion", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_logo_url", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_banner_url", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_color_primario", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_color_secundario", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_contacto", String.class,
+                                jakarta.persistence.ParameterMode.IN);
+
+                query.setParameter("p_nombre", nombre);
+                query.setParameter("p_ciudad", ciudad);
+                query.setParameter("p_descripcion", descripcion);
+                query.setParameter("p_logo_url", logoUrl);
+                query.setParameter("p_banner_url", bannerUrl);
+                query.setParameter("p_color_primario", colorPrimario);
+                query.setParameter("p_color_secundario", colorSecundario);
+                query.setParameter("p_contacto", contacto);
+
+                query.execute();
+        }
+
+        @Override
+        public void crearUsuarioClub(
+                        Long usuarioId,
+                        Long clubId,
+                        String rol) {
+
+                StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sp_create_usuario_club");
+
+                query.registerStoredProcedureParameter("p_usuario_id", Long.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_club_id", Long.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_rol", String.class, ParameterMode.IN);
+
+                query.setParameter("p_usuario_id", usuarioId);
+                query.setParameter("p_club_id", clubId);
+                query.setParameter("p_rol", rol);
+
+                query.execute();
+        }
+
+        @Override
+        public Object getPanelClubData(Long usuarioId) {
+
+                StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sp_get_panel_club");
+
+                query.registerStoredProcedureParameter(
+                                "p_usuario_id",
+                                Long.class,
+                                ParameterMode.IN);
+
+                query.setParameter("p_usuario_id", usuarioId);
+
+                List<?> result = query.getResultList();
+                if (result.isEmpty()) {
+                        return null;
+                }
+
+                Object[] row = (Object[]) result.get(0);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", row[0]);
+                response.put("nombre", row[1]);
+                response.put("logo", row[2]);
+                response.put("banner", row[3]);
+                response.put("descripcion", row[4]);
+                response.put("colorPrimario", row[5]);
+                response.put("colorSecundario", row[6]);
+                response.put("adminNombre", row[7]);
+                response.put("adminFoto", row[8]);
+
+                return response;
+
+        }
+
+        @Override
+        public void actualizarClub(
+                        Long clubId,
+                        String descripcion,
+                        String logoUrl,
+                        String bannerUrl,
+                        String colorPrimario,
+                        String colorSecundario) {
+
+                StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sp_update_club");
+
+                query.registerStoredProcedureParameter("p_id", Long.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_descripcion", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_logo_url", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_banner_url", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_color_primario", String.class, ParameterMode.IN);
+                query.registerStoredProcedureParameter("p_color_secundario", String.class, ParameterMode.IN);
+
+                query.setParameter("p_id", clubId);
+                query.setParameter("p_descripcion", descripcion);
+                query.setParameter("p_logo_url", logoUrl);
+                query.setParameter("p_banner_url", bannerUrl);
+                query.setParameter("p_color_primario", colorPrimario);
+                query.setParameter("p_color_secundario", colorSecundario);
+
+                query.execute();
+        }
+
+        @Override
+        public Long crearSolicitud(
+                        Long usuarioId,
+                        Long clubId,
+                        String rol,
+                        String mensaje) {
+
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_solicitud(?,?,?,?)")
+                                .setParameter(1, usuarioId)
+                                .setParameter(2, clubId)
+                                .setParameter(3, rol)
+                                .setParameter(4, mensaje)
+                                .getSingleResult();
+
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void crearSolicitudDeportiva(
+                        Long solicitudId,
+                        Double peso,
+                        Long estatura,
+                        String experiencia,
+                        String especialidad) {
+
+                entityManager
+                                .createNativeQuery("CALL sp_create_solicitud_deportiva(?,?,?,?,?)")
+                                .setParameter(1, solicitudId)
+                                .setParameter(2, peso)
+                                .setParameter(3, estatura)
+                                .setParameter(4, experiencia)
+                                .setParameter(5, especialidad)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getSolicitudesByClub(Long clubId) {
+
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_solicitudes_by_club(?)")
+                                .setParameter(1, clubId)
+                                .getResultList();
+        }
+
+        @Override
+        public void actualizarEstadoSolicitud(Long solicitudId, String estado) {
+
+                entityManager
+                                .createNativeQuery("CALL sp_update_solicitud_estado(?,?)")
+                                .setParameter(1, solicitudId)
+                                .setParameter(2, estado)
+                                .executeUpdate();
+        }
+
+        @Override
+        public Long crearHorarioEntrenamiento(
+                        Long clubId,
+                        Long grupoId,
+                        String dia,
+                        String horaInicio,
+                        String horaFin,
+                        String descripcion,
+                        String ubicacion,
+                        Long categoriaId) {
+
+                if (grupoId != null) {
+                        entityManager
+                                        .createNativeQuery(
+                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria_id, activo, created_at) "
+                                                                        +
+                                                                        "VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)")
+                                        .setParameter(1, grupoId)
+                                        .setParameter(2, dia)
+                                        .setParameter(3, horaInicio)
+                                        .setParameter(4, horaFin)
+                                        .setParameter(5, descripcion)
+                                        .setParameter(6, ubicacion)
+                                        .setParameter(7, categoriaId)
+                                        .executeUpdate();
+                } else {
+                        entityManager
+                                        .createNativeQuery(
+                                                        "INSERT INTO horario_entrenamiento (grupo_id, dia_semana, hora_inicio, hora_fin, descripcion, ubicacion, categoria_id, activo, created_at) "
+                                                                        +
+                                                                        "VALUES ((SELECT id FROM grupo_deportivo WHERE club_id = ? ORDER BY id LIMIT 1), ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)")
+                                        .setParameter(1, clubId)
+                                        .setParameter(2, dia)
+                                        .setParameter(3, horaInicio)
+                                        .setParameter(4, horaFin)
+                                        .setParameter(5, descripcion)
+                                        .setParameter(6, ubicacion)
+                                        .setParameter(7, categoriaId)
+                                        .executeUpdate();
+                }
+
+                Object result = entityManager
+                                .createNativeQuery("SELECT LAST_INSERT_ID()")
+                                .getSingleResult();
+
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarHorarioEntrenamiento(
+                        Long horarioId,
+                        Long grupoId,
+                        String dia,
+                        String horaInicio,
+                        String horaFin,
+                        String descripcion,
+                        String ubicacion,
+                        Long categoriaId) {
+
+                if (grupoId != null) {
+                        entityManager
+                                        .createNativeQuery(
+                                                        "UPDATE horario_entrenamiento " +
+                                                                        "SET grupo_id = ?, dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria_id = ? "
+                                                                        +
+                                                                        "WHERE id = ?")
+                                        .setParameter(1, grupoId)
+                                        .setParameter(2, dia)
+                                        .setParameter(3, horaInicio)
+                                        .setParameter(4, horaFin)
+                                        .setParameter(5, descripcion)
+                                        .setParameter(6, ubicacion)
+                                        .setParameter(7, categoriaId)
+                                        .setParameter(8, horarioId)
+                                        .executeUpdate();
+                } else {
+                        entityManager
+                                        .createNativeQuery(
+                                                        "UPDATE horario_entrenamiento " +
+                                                                        "SET dia_semana = ?, hora_inicio = ?, hora_fin = ?, descripcion = ?, ubicacion = ?, categoria_id = ? "
+                                                                        +
+                                                                        "WHERE id = ?")
+                                        .setParameter(1, dia)
+                                        .setParameter(2, horaInicio)
+                                        .setParameter(3, horaFin)
+                                        .setParameter(4, descripcion)
+                                        .setParameter(5, ubicacion)
+                                        .setParameter(6, categoriaId)
+                                        .setParameter(7, horarioId)
+                                        .executeUpdate();
+                }
+        }
+
+        @Override
+        public void eliminarHorarioEntrenamiento(Long horarioId) {
+
+        entityManager
+                .createNativeQuery(
+                            "UPDATE horario_entrenamiento " +
+                            "SET deleted_at = CURRENT_TIMESTAMP " +
+                            "WHERE id = ?")
+            .setParameter(1, horarioId)
+            .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getHorariosByClubSlug(String slug) {
+
+                return (List<Object[]>) entityManager
+                        .createNativeQuery(
+                                "SELECT " +
+                                            "he.id, " +
+                                            "he.dia_semana, " +
+                                            "TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, " +
+                                            "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, " +
+                                            "he.descripcion, " +
+                                            "he.ubicacion, " +
+                                            "he.activo, " +
+                                            "he.grupo_id, " +
+                                            "he.categoria_id, " +
+                                            "g.nombre AS grupo_nombre, " +
+                                            "cat.nombre AS categoria_nombre, " +
+                                            "FROM horario_entrenamiento he " +
+                                            "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +
+                                            "LEFT JOIN categoria cat ON cat.id = he.categoria_id " +
+                                            "JOIN club c ON (c.id = g.club_id OR c.id = cat.club_id) " +
+                                            "WHERE c.slug = ? " +
+                                            "AND he.activo = TRUE " +
+                                            "AND he.deleted_at IS NULL " +
+                                            "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio"
+                        )
+                            .setParameter(1, slug)
+                            .getResultList();
+        }
+
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getHorariosByClubId(Long clubId) {
+
+        return (List<Object[]>) entityManager
+                    .createNativeQuery(
+                            "SELECT " +
+                                "he.id, " +
+                                "he.dia_semana, " +
+                                "TIME_FORMAT(he.hora_inicio, '%H:%i') AS hora_inicio, " +
+                                "TIME_FORMAT(he.hora_fin, '%H:%i') AS hora_fin, " +
+                                "he.descripcion, " +
+                                "he.ubicacion, " +
+                                "he.activo, " +
+                                "he.grupo_id, " +
+                                "he.categoria_id, " +
+                                "g.nombre AS grupo_nombre, " +   // ✅ NUEVO
+                                "cat.nombre AS categoria_nombre " +   // ✅ NUEVO
+                                "FROM horario_entrenamiento he " +
+                                "LEFT JOIN grupo_deportivo g ON g.id = he.grupo_id " +  // ✅ CAMBIO
+                                "LEFT JOIN categoria cat ON cat.id = he.categoria_id " +  // ✅ CAMBIO
+                                "WHERE (g.club_id = ? OR he.categoria_id IS NOT NULL) " +   // ✅ FIX
+                                "AND he.activo = TRUE " +
+                                "AND he.deleted_at IS NULL " +
+                                "ORDER BY FIELD(he.dia_semana, 'lunes','martes','miercoles','jueves','viernes','sabado','domingo'), he.hora_inicio"
+                )
+                .setParameter(1, clubId)
+                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Long crearCategoria(Long clubId, String nombre, String descripcion) {
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_categoria(?,?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .getSingleResult();
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarCategoria(Long categoriaId, String nombre, String descripcion) {
+                entityManager
+                                .createNativeQuery("CALL sp_update_categoria(?,?,?)")
+                                .setParameter(1, categoriaId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void eliminarCategoria(Long categoriaId) {
+                entityManager
+                                .createNativeQuery("CALL sp_delete_categoria(?)")
+                                .setParameter(1, categoriaId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getCategoriasByClub(Long clubId, String search) {
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_categorias_by_club(?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, search == null ? "" : search)
+                                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object[] getCategoriaById(Long categoriaId) {
+                List<Object[]> result = (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_categoria_by_id(?)")
+                                .setParameter(1, categoriaId)
+                                .getResultList();
+                return result.isEmpty() ? null : result.get(0);
+        }
+
+        @Override
+        public void clearEntrenadoresCategoria(Long categoriaId) {
+                entityManager
+                                .createNativeQuery("CALL sp_clear_entrenadores_categoria(?)")
+                                .setParameter(1, categoriaId)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void insertEntrenadorCategoria(Long categoriaId, Long entrenadorId) {
+                entityManager
+                                .createNativeQuery("CALL sp_insert_entrenador_categoria(?,?)")
+                                .setParameter(1, categoriaId)
+                                .setParameter(2, entrenadorId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Long crearGrupoDeportivo(Long clubId, String nombre, String descripcion) {
+                Object result = entityManager
+                                .createNativeQuery("CALL sp_create_grupo_deportivo(?,?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .getSingleResult();
+                return ((Number) result).longValue();
+        }
+
+        @Override
+        public void actualizarGrupoDeportivo(Long grupoId, String nombre, String descripcion) {
+                entityManager
+                                .createNativeQuery("CALL sp_update_grupo_deportivo(?,?,?)")
+                                .setParameter(1, grupoId)
+                                .setParameter(2, nombre)
+                                .setParameter(3, descripcion)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void eliminarGrupoDeportivo(Long grupoId) {
+                entityManager
+                                .createNativeQuery("CALL sp_delete_grupo_deportivo(?)")
+                                .setParameter(1, grupoId)
+                                .executeUpdate();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getGruposByClub(Long clubId, String search) {
+                return (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_grupos_by_club(?,?)")
+                                .setParameter(1, clubId)
+                                .setParameter(2, search == null ? "" : search)
+                                .getResultList();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Object[] getGrupoById(Long grupoId) {
+                List<Object[]> result = (List<Object[]>) entityManager
+                                .createNativeQuery("CALL sp_get_grupo_by_id(?)")
+                                .setParameter(1, grupoId)
+                                .getResultList();
+                return result.isEmpty() ? null : result.get(0);
+        }
+
+        @Override
+        public void clearEntrenadoresGrupo(Long grupoId) {
+                entityManager
+                                .createNativeQuery("CALL sp_clear_entrenadores_grupo(?)")
+                                .setParameter(1, grupoId)
+                                .executeUpdate();
+        }
+
+        @Override
+        public void insertGrupoEntrenador(Long grupoId, Long entrenadorId) {
+                entityManager
+                                .createNativeQuery("CALL sp_insert_grupo_entrenador(?,?)")
+                                .setParameter(1, grupoId)
+                                .setParameter(2, entrenadorId)
+                                .executeUpdate();
+        }
+
+        @Override
+        public Long crearInvitacion(Long clubId, Long usuarioId, String rol) {
+        entityManager.createNativeQuery(
+                "INSERT INTO invitacion (club_id, usuario_id, rol, estado, created_at) " +
+                "VALUES (?, ?, ?, 'pendiente', CURRENT_TIMESTAMP)")
+                .setParameter(1, clubId)
+                .setParameter(2, usuarioId)
+                .setParameter(3, rol)
+                .executeUpdate();
+
+        return ((Number) entityManager
+                .createNativeQuery("SELECT LAST_INSERT_ID()")
+                .getSingleResult()).longValue();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public List<Object[]> getInvitacionesByClubId(Long clubId) {
+        return (List<Object[]>) entityManager.createNativeQuery(
+                "SELECT i.id, u.nombre, u.apellido, u.email, i.rol, i.estado, i.created_at " +
+                "FROM invitacion i " +
+                "JOIN usuario u ON u.id = i.usuario_id " +
+                "WHERE i.club_id = ? " +
+                "ORDER BY i.created_at DESC")
+                .setParameter(1, clubId)
+                .getResultList();
+        }
+
+        @Override
+        public Long buscarUsuarioPorEmail(String email) {
+        @SuppressWarnings("unchecked")
+        List<Object> results = entityManager.createNativeQuery(
+                "SELECT id FROM usuario WHERE email = ? AND deleted_at IS NULL LIMIT 1")
+                .setParameter(1, email)
+                .getResultList();
+        return results.isEmpty() ? null : ((Number) results.get(0)).longValue();
+        }
 
 }
